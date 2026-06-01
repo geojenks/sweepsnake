@@ -1,0 +1,13 @@
+# Claude Code / Claude files
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.claude.json
+.mcp.json
+
+# Credentials & brief (local only)
+ignore/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

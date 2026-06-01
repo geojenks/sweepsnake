@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo — 2022 World Cup Replay | Sweepsnake</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <h1>🐍 Sweep<span class="accent">snake</span></h1>
+      <span class="sub">Demo · 2022 World Cup replay</span>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="table.html">Live tables</a>
+      </nav>
+    </header>
+
+    <div class="panel">
+      <div class="btn-row" style="justify-content: space-between;">
+        <p class="muted small" style="margin:0; max-width: 640px;">
+          This is a fully self-contained replay of the <strong>2022 Qatar World Cup</strong>,
+          run through the sweepstake's scoring and subsumptive-league rules. No backend —
+          everything you see is computed in your browser from the final 2022 results.
+          Colours here are <strong>by tier</strong>, not by player.
+        </p>
+        <button class="btn" id="howBtn">How it works ▾</button>
+      </div>
+      <div class="howto" id="howto">
+        <ul>
+          <li><strong>Players draft for themselves</strong>, so round 1 (Tier&nbsp;1) is where the top seeds go and the weakest teams fall to the last tier. Here we tiered the 30 teams by FIFA ranking to simulate that draft.</li>
+          <li><strong>Leagues are subsumptive.</strong> League&nbsp;L contains every team whose tier&nbsp;≥&nbsp;L. So <strong>League&nbsp;1</strong> is the grand league with all 30 teams; each higher league strips out the top tier of seeds, down to <strong>League&nbsp;5</strong> (only the six lowest seeds).</li>
+          <li><strong>Underdogs sweep.</strong> A low-seeded team that goes deep appears in many leagues at once, so it can win several prize pots. In 2022, <strong>Morocco</strong> (Tier&nbsp;4) tops Leagues 3 and 4.</li>
+          <li><strong>Per-player league:</strong> each player's score is the sum of all the teams they drafted — the table just below.</li>
+          <li><strong>Points:</strong> Win 3 · Draw 1 · ET win 2 · Penalty-shootout win 4 (the 90-min draw scores 1, plus 3). Each knockout round reached adds a <span class="bonus">+2 bonus</span>.</li>
+        </ul>
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Player league <span class="muted small">— total across every team you drafted · winner takes <span style="color:var(--gold)">£60</span></span></h2>
+      <div class="table-scroll" style="margin-top:8px;">
+        <table class="board" style="min-width:560px;">
+          <thead>
+            <tr>
+              <th class="l">#</th>
+              <th class="l">Player</th>
+              <th class="l">Teams (by tier)</th>
+              <th>W</th><th>D</th><th>L</th><th>GD</th>
+              <th>Pts</th><th>Bns</th><th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="playerBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>League winners — end of 2022</h2>
+      <p class="muted small" style="margin:.2rem 0 12px;">Each player puts £5 into every league → <span style="color:var(--gold)">£30</span> per league. One team can win several. (Plus £10 each to the player league above.)</p>
+      <div class="cards" id="winnerCards"></div>
+    </div>
+
+    <div class="btn-row" id="filterBar" style="margin-bottom:14px;"></div>
+
+    <div class="table-scroll">
+      <table class="board">
+        <thead>
+          <tr>
+            <th class="l" title="Tier">Tr</th>
+            <th class="l">#</th>
+            <th class="l">Team</th>
+            <th class="l">Owner</th>
+            <th>P</th><th>W</th><th>D</th><th>L</th>
+            <th>GF</th><th>GA</th><th>GD</th>
+            <th>Pts</th><th>Bns</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <p class="footnote" id="footnote"></p>
+  </div>
+
+  <script type="module" src="js/demo.js"></script>
+</body>
+</html>

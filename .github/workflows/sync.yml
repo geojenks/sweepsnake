@@ -1,0 +1,27 @@
+name: Sync results
+
+# Pulls World Cup results from football-data.org into Supabase.
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # every 2 hours (UTC) during the tournament
+  workflow_dispatch: {}      # manual "Run workflow" button
+
+# Avoid overlapping runs.
+concurrency:
+  group: sync-results
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Sync
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scripts/sync.mjs
