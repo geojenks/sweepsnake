@@ -2,7 +2,7 @@
 // manual pick override, draft reset, and per-match result overrides.
 import { PLAYER_COLOURS } from "./engine.js";
 import {
-  sb, setConfig, getPlayers, addPlayer, deletePlayer,
+  sb, setConfig, getPlayers, addPlayer, updatePlayer, deletePlayer,
   upsertTeams, assignTeam, overrideMatch,
 } from "./supabase.js";
 import { $, el, playerColour, loadLiveData, showError } from "./app.js";
@@ -26,7 +26,7 @@ function render() {
     configPanel(config),
     draftStatusPanel(config),
     teamsPanel(teams),
-    playersPanel(players, config),
+    playersPanel(players, config, teams),
     overridePanel(players, teams),
     resetPanel(),
     matchesPanel(matches, teams),
@@ -117,9 +117,12 @@ function teamsPanel(teams) {
       el("button", { class: "btn", onclick: seed }, "Seed / refresh teams")));
 }
 
-// ---- Players ----
-function playersPanel(players, config) {
+// ---- Players (and draft order) ----
+function playersPanel(players, config, teams) {
   const nPlayers = num(config.n_players, 6);
+  const sorted = [...players].sort((a, b) => a.slot - b.slot);
+  const draftStarted = teams.some((t) => t.tier != null);
+
   const name = textInput("", { placeholder: "new player name" });
   const add = async () => {
     const n = name.value.trim(); if (!n) return;
@@ -128,17 +131,33 @@ function playersPanel(players, config) {
     await addPlayer(n, PLAYER_COLOURS[(slot - 1) % PLAYER_COLOURS.length], slot);
     await reload();
   };
-  const rows = [...players].sort((a, b) => a.slot - b.slot).map((p) =>
+
+  // Swap a player's seat with the neighbour above/below to set the round-1 order.
+  const move = async (idx, dir) => {
+    const j = idx + dir;
+    if (j < 0 || j >= sorted.length) return;
+    const a = sorted[idx], b = sorted[j];
+    await Promise.all([updatePlayer(a.id, { slot: b.slot }), updatePlayer(b.id, { slot: a.slot })]);
+    await reload();
+  };
+
+  const rows = sorted.map((p, i) =>
     el("div", { class: "btn-row", style: { alignItems: "center" } },
       el("span", { class: "tier-badge", style: { background: playerColour(p), color: "#10141a" } }, String(p.slot)),
       el("span", { style: { color: playerColour(p), fontWeight: "700", minWidth: "120px" } }, p.name),
+      el("button", { class: "btn", title: "move up (earlier pick)", disabled: i === 0 ? "" : null, onclick: () => move(i, -1) }, "↑"),
+      el("button", { class: "btn", title: "move down (later pick)", disabled: i === sorted.length - 1 ? "" : null, onclick: () => move(i, 1) }, "↓"),
       el("button", {
         class: "btn", onclick: async () => { if (confirm(`Remove ${p.name}?`)) { await deletePlayer(p.id); await reload(); } },
       }, "Remove")));
 
   return el("div", { class: "panel" },
-    el("h2", {}, `Players (${players.length} / ${nPlayers})`),
-    el("div", { style: { display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" } }, rows),
+    el("h2", {}, `Players & draft order (${players.length} / ${nPlayers})`),
+    el("p", { class: "muted small" },
+      "Seat order = round-1 pick order (seat 1 picks first); later rounds rotate one seat each round. ",
+      "Arrange these to match your FPL finishing order ",
+      draftStarted ? el("strong", { style: { color: "var(--gold)" } }, "— the draft has started, so reordering now will scramble it.") : "before opening the draft."),
+    el("div", { style: { display: "flex", flexDirection: "column", gap: "8px", margin: "12px 0" } }, rows),
     el("div", { class: "btn-row" }, name, el("button", { class: "btn", onclick: add }, "Add player")));
 }
 
