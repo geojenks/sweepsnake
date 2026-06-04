@@ -7,13 +7,34 @@ import {
 } from "./app.js";
 
 const root = $("#content");
-const state = { data: null, busy: false };
+const state = { data: null, busy: false, groupByTeam: new Map() };
+
+// Where each group's top two go in the Round of 32 (official 2026 bracket).
+const GROUP_NOTE = {
+  A: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group B runner-up",
+  B: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group A runner-up",
+  C: "Winner → R32 vs Group F runner-up · Runner-up → R32 vs Group F winner",
+  D: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group G runner-up",
+  E: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group I runner-up",
+  F: "Winner → R32 vs Group C runner-up · Runner-up → R32 vs Group C winner",
+  G: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group D runner-up",
+  H: "Winner → R32 vs Group J runner-up · Runner-up → R32 vs Group J winner",
+  I: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group E runner-up",
+  J: "Winner → R32 vs Group H runner-up · Runner-up → R32 vs Group H winner",
+  K: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group L runner-up",
+  L: "Winner → R32 vs a best third-placed team · Runner-up → R32 vs Group K runner-up",
+};
 
 start();
 
 async function start() {
   try {
-    state.data = await loadLiveData();
+    const [data, teamsFile] = await Promise.all([
+      loadLiveData(),
+      fetch("data/wc2026_teams.json").then((r) => r.json()).catch(() => ({ teams: [] })),
+    ]);
+    state.data = data;
+    state.groupByTeam = new Map(teamsFile.teams.map((t) => [t.id, t.group]));
   } catch (e) { showError(root, e); return; }
   render();
   const refresh = async () => { state.data = await loadLiveData(); render(); };
@@ -117,26 +138,41 @@ function availableBoard(teams, myTurn, round, me) {
     .filter((t) => t.in_play !== false && t.tier == null)
     .sort((a, b) => (a.fifa_ranking || 999) - (b.fifa_ranking || 999));
 
-  const grid = el("div", {
-    class: "cards", style: { gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" },
-  });
+  const card = (t) => el("div", {
+    class: "winner-card",
+    style: { borderLeftColor: "var(--line)", cursor: myTurn ? "pointer" : "default", opacity: myTurn ? "1" : "0.85" },
+    title: myTurn ? `Draft ${t.name} into your Tier ${round}` : "",
+    onclick: myTurn ? () => pick(t, round, me) : null,
+  },
+    el("div", { class: "lg" }, `FIFA #${t.fifa_ranking ?? "—"}`),
+    el("div", { class: "team" }, `${t.flag || ""} ${t.name}`));
 
+  // Group the still-available teams by their World Cup group (A–L).
+  const groups = new Map();
   for (const t of avail) {
-    const card = el("div", {
-      class: "winner-card",
-      style: { borderLeftColor: "var(--line)", cursor: myTurn ? "pointer" : "default", opacity: myTurn ? "1" : "0.85" },
-      title: myTurn ? `Draft ${t.name} into your Tier ${round}` : "",
-      onclick: myTurn ? () => pick(t, round, me) : null,
-    },
-      el("div", { class: "lg" }, `FIFA #${t.fifa_ranking ?? "—"}`),
-      el("div", { class: "team" }, `${t.flag || ""} ${t.name}`));
-    grid.append(card);
+    const g = state.groupByTeam.get(t.id) || "?";
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(t);
   }
+
+  const sections = [...groups.keys()].sort().map((g) => {
+    const grid = el("div", {
+      class: "cards", style: { gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", marginTop: "8px" },
+    });
+    groups.get(g).forEach((t) => grid.append(card(t)));
+    return el("div", { style: { marginTop: "14px" } },
+      el("div", { class: "btn-row", style: { gap: "10px", alignItems: "baseline" } },
+        el("span", { style: { fontWeight: "700", fontSize: "0.95rem" } }, `Group ${g}`),
+        el("span", { class: "muted small" }, GROUP_NOTE[g] || "")),
+      grid);
+  });
 
   return el("div", { class: "panel" },
     el("h2", {}, `Available teams (${avail.length})`,
       myTurn ? null : el("span", { class: "muted small" }, " — wait for your turn to pick")),
-    grid);
+    el("p", { class: "muted small", style: { margin: "0 0 4px" } },
+      "Grouped by World Cup group; top two of each group reach the Round of 32. Ordered by FIFA seed within each group."),
+    sections);
 }
 
 async function pick(team, round, me) {

@@ -1,0 +1,1064 @@
+{
+  "competition": "WC",
+  "note": "Static fixture + bracket skeleton. Group-stage teams are final; knockout slots are the official 2026 bracket. Live scores/resolved teams overlay from the matches table, joined by id.",
+  "groupStage": [
+    {
+      "id": "537327",
+      "group": "A",
+      "matchday": 1,
+      "homeId": "769",
+      "awayId": "774",
+      "utcDate": "2026-06-11T19:00:00Z"
+    },
+    {
+      "id": "537328",
+      "group": "A",
+      "matchday": 1,
+      "homeId": "772",
+      "awayId": "798",
+      "utcDate": "2026-06-12T02:00:00Z"
+    },
+    {
+      "id": "537329",
+      "group": "A",
+      "matchday": 2,
+      "homeId": "798",
+      "awayId": "774",
+      "utcDate": "2026-06-18T16:00:00Z"
+    },
+    {
+      "id": "537330",
+      "group": "A",
+      "matchday": 2,
+      "homeId": "769",
+      "awayId": "772",
+      "utcDate": "2026-06-19T01:00:00Z"
+    },
+    {
+      "id": "537331",
+      "group": "A",
+      "matchday": 3,
+      "homeId": "798",
+      "awayId": "769",
+      "utcDate": "2026-06-25T01:00:00Z"
+    },
+    {
+      "id": "537332",
+      "group": "A",
+      "matchday": 3,
+      "homeId": "774",
+      "awayId": "772",
+      "utcDate": "2026-06-25T01:00:00Z"
+    },
+    {
+      "id": "537333",
+      "group": "B",
+      "matchday": 1,
+      "homeId": "828",
+      "awayId": "1060",
+      "utcDate": "2026-06-12T19:00:00Z"
+    },
+    {
+      "id": "537334",
+      "group": "B",
+      "matchday": 1,
+      "homeId": "8030",
+      "awayId": "788",
+      "utcDate": "2026-06-13T19:00:00Z"
+    },
+    {
+      "id": "537335",
+      "group": "B",
+      "matchday": 2,
+      "homeId": "788",
+      "awayId": "1060",
+      "utcDate": "2026-06-18T19:00:00Z"
+    },
+    {
+      "id": "537336",
+      "group": "B",
+      "matchday": 2,
+      "homeId": "828",
+      "awayId": "8030",
+      "utcDate": "2026-06-18T22:00:00Z"
+    },
+    {
+      "id": "537337",
+      "group": "B",
+      "matchday": 3,
+      "homeId": "788",
+      "awayId": "828",
+      "utcDate": "2026-06-24T19:00:00Z"
+    },
+    {
+      "id": "537338",
+      "group": "B",
+      "matchday": 3,
+      "homeId": "1060",
+      "awayId": "8030",
+      "utcDate": "2026-06-24T19:00:00Z"
+    },
+    {
+      "id": "537339",
+      "group": "C",
+      "matchday": 1,
+      "homeId": "764",
+      "awayId": "815",
+      "utcDate": "2026-06-13T22:00:00Z"
+    },
+    {
+      "id": "537340",
+      "group": "C",
+      "matchday": 1,
+      "homeId": "836",
+      "awayId": "8873",
+      "utcDate": "2026-06-14T01:00:00Z"
+    },
+    {
+      "id": "537342",
+      "group": "C",
+      "matchday": 2,
+      "homeId": "8873",
+      "awayId": "815",
+      "utcDate": "2026-06-19T22:00:00Z"
+    },
+    {
+      "id": "537341",
+      "group": "C",
+      "matchday": 2,
+      "homeId": "764",
+      "awayId": "836",
+      "utcDate": "2026-06-20T00:30:00Z"
+    },
+    {
+      "id": "537344",
+      "group": "C",
+      "matchday": 3,
+      "homeId": "815",
+      "awayId": "836",
+      "utcDate": "2026-06-24T22:00:00Z"
+    },
+    {
+      "id": "537343",
+      "group": "C",
+      "matchday": 3,
+      "homeId": "8873",
+      "awayId": "764",
+      "utcDate": "2026-06-24T22:00:00Z"
+    },
+    {
+      "id": "537345",
+      "group": "D",
+      "matchday": 1,
+      "homeId": "771",
+      "awayId": "761",
+      "utcDate": "2026-06-13T01:00:00Z"
+    },
+    {
+      "id": "537346",
+      "group": "D",
+      "matchday": 1,
+      "homeId": "779",
+      "awayId": "803",
+      "utcDate": "2026-06-14T04:00:00Z"
+    },
+    {
+      "id": "537348",
+      "group": "D",
+      "matchday": 2,
+      "homeId": "771",
+      "awayId": "779",
+      "utcDate": "2026-06-19T19:00:00Z"
+    },
+    {
+      "id": "537347",
+      "group": "D",
+      "matchday": 2,
+      "homeId": "803",
+      "awayId": "761",
+      "utcDate": "2026-06-20T03:00:00Z"
+    },
+    {
+      "id": "537349",
+      "group": "D",
+      "matchday": 3,
+      "homeId": "803",
+      "awayId": "771",
+      "utcDate": "2026-06-26T02:00:00Z"
+    },
+    {
+      "id": "537350",
+      "group": "D",
+      "matchday": 3,
+      "homeId": "761",
+      "awayId": "779",
+      "utcDate": "2026-06-26T02:00:00Z"
+    },
+    {
+      "id": "537351",
+      "group": "E",
+      "matchday": 1,
+      "homeId": "759",
+      "awayId": "9460",
+      "utcDate": "2026-06-14T17:00:00Z"
+    },
+    {
+      "id": "537352",
+      "group": "E",
+      "matchday": 1,
+      "homeId": "1935",
+      "awayId": "791",
+      "utcDate": "2026-06-14T23:00:00Z"
+    },
+    {
+      "id": "537353",
+      "group": "E",
+      "matchday": 2,
+      "homeId": "759",
+      "awayId": "1935",
+      "utcDate": "2026-06-20T20:00:00Z"
+    },
+    {
+      "id": "537354",
+      "group": "E",
+      "matchday": 2,
+      "homeId": "791",
+      "awayId": "9460",
+      "utcDate": "2026-06-21T00:00:00Z"
+    },
+    {
+      "id": "537355",
+      "group": "E",
+      "matchday": 3,
+      "homeId": "791",
+      "awayId": "759",
+      "utcDate": "2026-06-25T20:00:00Z"
+    },
+    {
+      "id": "537356",
+      "group": "E",
+      "matchday": 3,
+      "homeId": "9460",
+      "awayId": "1935",
+      "utcDate": "2026-06-25T20:00:00Z"
+    },
+    {
+      "id": "537357",
+      "group": "F",
+      "matchday": 1,
+      "homeId": "8601",
+      "awayId": "766",
+      "utcDate": "2026-06-14T20:00:00Z"
+    },
+    {
+      "id": "537358",
+      "group": "F",
+      "matchday": 1,
+      "homeId": "792",
+      "awayId": "802",
+      "utcDate": "2026-06-15T02:00:00Z"
+    },
+    {
+      "id": "537359",
+      "group": "F",
+      "matchday": 2,
+      "homeId": "8601",
+      "awayId": "792",
+      "utcDate": "2026-06-20T17:00:00Z"
+    },
+    {
+      "id": "537360",
+      "group": "F",
+      "matchday": 2,
+      "homeId": "802",
+      "awayId": "766",
+      "utcDate": "2026-06-21T04:00:00Z"
+    },
+    {
+      "id": "537361",
+      "group": "F",
+      "matchday": 3,
+      "homeId": "802",
+      "awayId": "8601",
+      "utcDate": "2026-06-25T23:00:00Z"
+    },
+    {
+      "id": "537362",
+      "group": "F",
+      "matchday": 3,
+      "homeId": "766",
+      "awayId": "792",
+      "utcDate": "2026-06-25T23:00:00Z"
+    },
+    {
+      "id": "537363",
+      "group": "G",
+      "matchday": 1,
+      "homeId": "805",
+      "awayId": "825",
+      "utcDate": "2026-06-15T19:00:00Z"
+    },
+    {
+      "id": "537364",
+      "group": "G",
+      "matchday": 1,
+      "homeId": "840",
+      "awayId": "783",
+      "utcDate": "2026-06-16T01:00:00Z"
+    },
+    {
+      "id": "537365",
+      "group": "G",
+      "matchday": 2,
+      "homeId": "805",
+      "awayId": "840",
+      "utcDate": "2026-06-21T19:00:00Z"
+    },
+    {
+      "id": "537366",
+      "group": "G",
+      "matchday": 2,
+      "homeId": "783",
+      "awayId": "825",
+      "utcDate": "2026-06-22T01:00:00Z"
+    },
+    {
+      "id": "537367",
+      "group": "G",
+      "matchday": 3,
+      "homeId": "783",
+      "awayId": "805",
+      "utcDate": "2026-06-27T03:00:00Z"
+    },
+    {
+      "id": "537368",
+      "group": "G",
+      "matchday": 3,
+      "homeId": "825",
+      "awayId": "840",
+      "utcDate": "2026-06-27T03:00:00Z"
+    },
+    {
+      "id": "537369",
+      "group": "H",
+      "matchday": 1,
+      "homeId": "760",
+      "awayId": "1930",
+      "utcDate": "2026-06-15T16:00:00Z"
+    },
+    {
+      "id": "537370",
+      "group": "H",
+      "matchday": 1,
+      "homeId": "801",
+      "awayId": "758",
+      "utcDate": "2026-06-15T22:00:00Z"
+    },
+    {
+      "id": "537371",
+      "group": "H",
+      "matchday": 2,
+      "homeId": "760",
+      "awayId": "801",
+      "utcDate": "2026-06-21T16:00:00Z"
+    },
+    {
+      "id": "537372",
+      "group": "H",
+      "matchday": 2,
+      "homeId": "758",
+      "awayId": "1930",
+      "utcDate": "2026-06-21T22:00:00Z"
+    },
+    {
+      "id": "537373",
+      "group": "H",
+      "matchday": 3,
+      "homeId": "758",
+      "awayId": "760",
+      "utcDate": "2026-06-27T00:00:00Z"
+    },
+    {
+      "id": "537374",
+      "group": "H",
+      "matchday": 3,
+      "homeId": "1930",
+      "awayId": "801",
+      "utcDate": "2026-06-27T00:00:00Z"
+    },
+    {
+      "id": "537391",
+      "group": "I",
+      "matchday": 1,
+      "homeId": "773",
+      "awayId": "804",
+      "utcDate": "2026-06-16T19:00:00Z"
+    },
+    {
+      "id": "537392",
+      "group": "I",
+      "matchday": 1,
+      "homeId": "8062",
+      "awayId": "8872",
+      "utcDate": "2026-06-16T22:00:00Z"
+    },
+    {
+      "id": "537393",
+      "group": "I",
+      "matchday": 2,
+      "homeId": "773",
+      "awayId": "8062",
+      "utcDate": "2026-06-22T21:00:00Z"
+    },
+    {
+      "id": "537394",
+      "group": "I",
+      "matchday": 2,
+      "homeId": "8872",
+      "awayId": "804",
+      "utcDate": "2026-06-23T00:00:00Z"
+    },
+    {
+      "id": "537395",
+      "group": "I",
+      "matchday": 3,
+      "homeId": "8872",
+      "awayId": "773",
+      "utcDate": "2026-06-26T19:00:00Z"
+    },
+    {
+      "id": "537396",
+      "group": "I",
+      "matchday": 3,
+      "homeId": "804",
+      "awayId": "8062",
+      "utcDate": "2026-06-26T19:00:00Z"
+    },
+    {
+      "id": "537397",
+      "group": "J",
+      "matchday": 1,
+      "homeId": "762",
+      "awayId": "778",
+      "utcDate": "2026-06-17T01:00:00Z"
+    },
+    {
+      "id": "537398",
+      "group": "J",
+      "matchday": 1,
+      "homeId": "816",
+      "awayId": "8049",
+      "utcDate": "2026-06-17T04:00:00Z"
+    },
+    {
+      "id": "537399",
+      "group": "J",
+      "matchday": 2,
+      "homeId": "762",
+      "awayId": "816",
+      "utcDate": "2026-06-22T17:00:00Z"
+    },
+    {
+      "id": "537400",
+      "group": "J",
+      "matchday": 2,
+      "homeId": "8049",
+      "awayId": "778",
+      "utcDate": "2026-06-23T03:00:00Z"
+    },
+    {
+      "id": "537401",
+      "group": "J",
+      "matchday": 3,
+      "homeId": "8049",
+      "awayId": "762",
+      "utcDate": "2026-06-28T02:00:00Z"
+    },
+    {
+      "id": "537402",
+      "group": "J",
+      "matchday": 3,
+      "homeId": "778",
+      "awayId": "816",
+      "utcDate": "2026-06-28T02:00:00Z"
+    },
+    {
+      "id": "537403",
+      "group": "K",
+      "matchday": 1,
+      "homeId": "765",
+      "awayId": "1934",
+      "utcDate": "2026-06-17T17:00:00Z"
+    },
+    {
+      "id": "537404",
+      "group": "K",
+      "matchday": 1,
+      "homeId": "8070",
+      "awayId": "818",
+      "utcDate": "2026-06-18T02:00:00Z"
+    },
+    {
+      "id": "537405",
+      "group": "K",
+      "matchday": 2,
+      "homeId": "765",
+      "awayId": "8070",
+      "utcDate": "2026-06-23T17:00:00Z"
+    },
+    {
+      "id": "537406",
+      "group": "K",
+      "matchday": 2,
+      "homeId": "818",
+      "awayId": "1934",
+      "utcDate": "2026-06-24T02:00:00Z"
+    },
+    {
+      "id": "537407",
+      "group": "K",
+      "matchday": 3,
+      "homeId": "818",
+      "awayId": "765",
+      "utcDate": "2026-06-27T23:30:00Z"
+    },
+    {
+      "id": "537408",
+      "group": "K",
+      "matchday": 3,
+      "homeId": "1934",
+      "awayId": "8070",
+      "utcDate": "2026-06-27T23:30:00Z"
+    },
+    {
+      "id": "537409",
+      "group": "L",
+      "matchday": 1,
+      "homeId": "770",
+      "awayId": "799",
+      "utcDate": "2026-06-17T20:00:00Z"
+    },
+    {
+      "id": "537410",
+      "group": "L",
+      "matchday": 1,
+      "homeId": "763",
+      "awayId": "1836",
+      "utcDate": "2026-06-17T23:00:00Z"
+    },
+    {
+      "id": "537411",
+      "group": "L",
+      "matchday": 2,
+      "homeId": "770",
+      "awayId": "763",
+      "utcDate": "2026-06-23T20:00:00Z"
+    },
+    {
+      "id": "537412",
+      "group": "L",
+      "matchday": 2,
+      "homeId": "1836",
+      "awayId": "799",
+      "utcDate": "2026-06-23T23:00:00Z"
+    },
+    {
+      "id": "537413",
+      "group": "L",
+      "matchday": 3,
+      "homeId": "1836",
+      "awayId": "770",
+      "utcDate": "2026-06-27T21:00:00Z"
+    },
+    {
+      "id": "537414",
+      "group": "L",
+      "matchday": 3,
+      "homeId": "799",
+      "awayId": "763",
+      "utcDate": "2026-06-27T21:00:00Z"
+    }
+  ],
+  "knockout": [
+    {
+      "id": "537417",
+      "matchNo": 73,
+      "stage": "LAST_32",
+      "home": {
+        "type": "runner",
+        "group": "A"
+      },
+      "away": {
+        "type": "runner",
+        "group": "B"
+      },
+      "utcDate": "2026-06-28T19:00:00Z",
+      "feedsInto": 90
+    },
+    {
+      "id": "537415",
+      "matchNo": 74,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "E"
+      },
+      "away": {
+        "type": "third",
+        "groups": "ABCDF"
+      },
+      "utcDate": "2026-06-29T20:30:00Z",
+      "feedsInto": 89
+    },
+    {
+      "id": "537418",
+      "matchNo": 75,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "F"
+      },
+      "away": {
+        "type": "runner",
+        "group": "C"
+      },
+      "utcDate": "2026-06-30T01:00:00Z",
+      "feedsInto": 90
+    },
+    {
+      "id": "537423",
+      "matchNo": 76,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "C"
+      },
+      "away": {
+        "type": "runner",
+        "group": "F"
+      },
+      "utcDate": "2026-06-29T17:00:00Z",
+      "feedsInto": 91
+    },
+    {
+      "id": "537416",
+      "matchNo": 77,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "I"
+      },
+      "away": {
+        "type": "third",
+        "groups": "CDFGH"
+      },
+      "utcDate": "2026-06-30T21:00:00Z",
+      "feedsInto": 89
+    },
+    {
+      "id": "537424",
+      "matchNo": 78,
+      "stage": "LAST_32",
+      "home": {
+        "type": "runner",
+        "group": "E"
+      },
+      "away": {
+        "type": "runner",
+        "group": "I"
+      },
+      "utcDate": "2026-06-30T17:00:00Z",
+      "feedsInto": 91
+    },
+    {
+      "id": "537425",
+      "matchNo": 79,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "A"
+      },
+      "away": {
+        "type": "third",
+        "groups": "CEFHI"
+      },
+      "utcDate": "2026-07-01T01:00:00Z",
+      "feedsInto": 92
+    },
+    {
+      "id": "537426",
+      "matchNo": 80,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "L"
+      },
+      "away": {
+        "type": "third",
+        "groups": "EHIJK"
+      },
+      "utcDate": "2026-07-01T16:00:00Z",
+      "feedsInto": 92
+    },
+    {
+      "id": "537421",
+      "matchNo": 81,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "D"
+      },
+      "away": {
+        "type": "third",
+        "groups": "BEFIJ"
+      },
+      "utcDate": "2026-07-02T00:00:00Z",
+      "feedsInto": 94
+    },
+    {
+      "id": "537422",
+      "matchNo": 82,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "G"
+      },
+      "away": {
+        "type": "third",
+        "groups": "AEHIJ"
+      },
+      "utcDate": "2026-07-01T20:00:00Z",
+      "feedsInto": 94
+    },
+    {
+      "id": "537419",
+      "matchNo": 83,
+      "stage": "LAST_32",
+      "home": {
+        "type": "runner",
+        "group": "K"
+      },
+      "away": {
+        "type": "runner",
+        "group": "L"
+      },
+      "utcDate": "2026-07-02T23:00:00Z",
+      "feedsInto": 93
+    },
+    {
+      "id": "537420",
+      "matchNo": 84,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "H"
+      },
+      "away": {
+        "type": "runner",
+        "group": "J"
+      },
+      "utcDate": "2026-07-02T19:00:00Z",
+      "feedsInto": 93
+    },
+    {
+      "id": "537429",
+      "matchNo": 85,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "B"
+      },
+      "away": {
+        "type": "third",
+        "groups": "EFGIJ"
+      },
+      "utcDate": "2026-07-03T03:00:00Z",
+      "feedsInto": 96
+    },
+    {
+      "id": "537427",
+      "matchNo": 86,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "J"
+      },
+      "away": {
+        "type": "runner",
+        "group": "H"
+      },
+      "utcDate": "2026-07-03T22:00:00Z",
+      "feedsInto": 95
+    },
+    {
+      "id": "537430",
+      "matchNo": 87,
+      "stage": "LAST_32",
+      "home": {
+        "type": "winner",
+        "group": "K"
+      },
+      "away": {
+        "type": "third",
+        "groups": "DEIJL"
+      },
+      "utcDate": "2026-07-04T01:30:00Z",
+      "feedsInto": 96
+    },
+    {
+      "id": "537428",
+      "matchNo": 88,
+      "stage": "LAST_32",
+      "home": {
+        "type": "runner",
+        "group": "D"
+      },
+      "away": {
+        "type": "runner",
+        "group": "G"
+      },
+      "utcDate": "2026-07-03T18:00:00Z",
+      "feedsInto": 95
+    },
+    {
+      "id": "537375",
+      "matchNo": 89,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 74
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 77
+      },
+      "utcDate": "2026-07-04T21:00:00Z",
+      "feedsInto": 97
+    },
+    {
+      "id": "537376",
+      "matchNo": 90,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 73
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 75
+      },
+      "utcDate": "2026-07-04T17:00:00Z",
+      "feedsInto": 97
+    },
+    {
+      "id": "537377",
+      "matchNo": 91,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 76
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 78
+      },
+      "utcDate": "2026-07-05T20:00:00Z",
+      "feedsInto": 99
+    },
+    {
+      "id": "537378",
+      "matchNo": 92,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 79
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 80
+      },
+      "utcDate": "2026-07-06T00:00:00Z",
+      "feedsInto": 99
+    },
+    {
+      "id": "537379",
+      "matchNo": 93,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 83
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 84
+      },
+      "utcDate": "2026-07-06T19:00:00Z",
+      "feedsInto": 98
+    },
+    {
+      "id": "537380",
+      "matchNo": 94,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 81
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 82
+      },
+      "utcDate": "2026-07-07T00:00:00Z",
+      "feedsInto": 98
+    },
+    {
+      "id": "537381",
+      "matchNo": 95,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 86
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 88
+      },
+      "utcDate": "2026-07-07T16:00:00Z",
+      "feedsInto": 100
+    },
+    {
+      "id": "537382",
+      "matchNo": 96,
+      "stage": "LAST_16",
+      "home": {
+        "type": "matchWinner",
+        "match": 85
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 87
+      },
+      "utcDate": "2026-07-07T20:00:00Z",
+      "feedsInto": 100
+    },
+    {
+      "id": "537383",
+      "matchNo": 97,
+      "stage": "QUARTER_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 89
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 90
+      },
+      "utcDate": "2026-07-09T20:00:00Z",
+      "feedsInto": 101
+    },
+    {
+      "id": "537384",
+      "matchNo": 98,
+      "stage": "QUARTER_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 93
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 94
+      },
+      "utcDate": "2026-07-10T19:00:00Z",
+      "feedsInto": 101
+    },
+    {
+      "id": "537385",
+      "matchNo": 99,
+      "stage": "QUARTER_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 91
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 92
+      },
+      "utcDate": "2026-07-11T21:00:00Z",
+      "feedsInto": 102
+    },
+    {
+      "id": "537386",
+      "matchNo": 100,
+      "stage": "QUARTER_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 95
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 96
+      },
+      "utcDate": "2026-07-12T01:00:00Z",
+      "feedsInto": 102
+    },
+    {
+      "id": "537387",
+      "matchNo": 101,
+      "stage": "SEMI_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 97
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 98
+      },
+      "utcDate": "2026-07-14T19:00:00Z",
+      "feedsInto": 104
+    },
+    {
+      "id": "537388",
+      "matchNo": 102,
+      "stage": "SEMI_FINALS",
+      "home": {
+        "type": "matchWinner",
+        "match": 99
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 100
+      },
+      "utcDate": "2026-07-15T19:00:00Z",
+      "feedsInto": 104
+    },
+    {
+      "id": "537389",
+      "matchNo": 103,
+      "stage": "THIRD_PLACE",
+      "home": {
+        "type": "matchLoser",
+        "match": 101
+      },
+      "away": {
+        "type": "matchLoser",
+        "match": 102
+      },
+      "utcDate": "2026-07-18T21:00:00Z",
+      "feedsInto": null
+    },
+    {
+      "id": "537390",
+      "matchNo": 104,
+      "stage": "FINAL",
+      "home": {
+        "type": "matchWinner",
+        "match": 101
+      },
+      "away": {
+        "type": "matchWinner",
+        "match": 102
+      },
+      "utcDate": "2026-07-19T19:00:00Z",
+      "feedsInto": null
+    }
+  ]
+}
