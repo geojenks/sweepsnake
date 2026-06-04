@@ -105,7 +105,7 @@ function render() {
   root.append(rosters(players, teams, nRounds));
 
   // ---- available teams ----
-  root.append(availableBoard(teams, myTurn, round, me));
+  root.append(availableBoard(teams, players, myTurn, round, me));
 }
 
 function banner(title, ...rest) {
@@ -133,45 +133,70 @@ function rosters(players, teams, nRounds) {
   return el("div", { class: "panel" }, el("h2", {}, "Rosters"), grid);
 }
 
-function availableBoard(teams, myTurn, round, me) {
-  const avail = teams
-    .filter((t) => t.in_play !== false && t.tier == null)
+function availableBoard(teams, players, myTurn, round, me) {
+  const playerById = new Map(players.map((p) => [p.id, p]));
+  // All in-play teams stay on the board; drafted ones are shown greyed so the
+  // remaining group context is visible when choosing later tiers.
+  const inPlay = teams
+    .filter((t) => t.in_play !== false)
     .sort((a, b) => (a.fifa_ranking || 999) - (b.fifa_ranking || 999));
+  const availCount = inPlay.filter((t) => t.tier == null).length;
 
-  const card = (t) => el("div", {
-    class: "winner-card",
-    style: { borderLeftColor: "var(--line)", cursor: myTurn ? "pointer" : "default", opacity: myTurn ? "1" : "0.85" },
-    title: myTurn ? `Draft ${t.name} into your Tier ${round}` : "",
-    onclick: myTurn ? () => pick(t, round, me) : null,
-  },
-    el("div", { class: "lg" }, `FIFA #${t.fifa_ranking ?? "—"}`),
-    el("div", { class: "team" }, `${t.flag || ""} ${t.name}`));
+  const card = (t) => {
+    const drafted = t.tier != null && t.player_id != null;
+    const owner = drafted ? playerById.get(t.player_id) : null;
+    const colour = owner ? playerColour(owner) : null;
+    const canPick = !drafted && myTurn;
+    return el("div", {
+      class: "winner-card",
+      style: {
+        borderLeftColor: drafted ? (colour || "var(--line)") : "var(--line)",
+        cursor: canPick ? "pointer" : "default",
+        opacity: drafted ? "0.4" : (myTurn ? "1" : "0.85"),
+      },
+      title: drafted
+        ? `${t.name} — drafted by ${owner?.name || "?"} (Tier ${t.tier})`
+        : (myTurn ? `Draft ${t.name} into your Tier ${round}` : ""),
+      onclick: canPick ? () => pick(t, round, me) : null,
+    },
+      el("div", { class: "lg" }, drafted
+        ? el("span", { style: { color: colour } }, `${owner?.name || "taken"} · Tier ${t.tier}`)
+        : `FIFA #${t.fifa_ranking ?? "—"}`),
+      el("div", {
+        class: "team",
+        style: drafted ? { textDecoration: "line-through", textDecorationColor: "var(--text-faint)" } : {},
+      }, `${t.flag || ""} ${t.name}`));
+  };
 
-  // Group the still-available teams by their World Cup group (A–L).
+  // Group every in-play team by its World Cup group (A–L).
   const groups = new Map();
-  for (const t of avail) {
+  for (const t of inPlay) {
     const g = state.groupByTeam.get(t.id) || "?";
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(t);
   }
 
   const sections = [...groups.keys()].sort().map((g) => {
+    const list = groups.get(g);
+    const left = list.filter((t) => t.tier == null).length;
     const grid = el("div", {
       class: "cards", style: { gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", marginTop: "8px" },
     });
-    groups.get(g).forEach((t) => grid.append(card(t)));
+    list.forEach((t) => grid.append(card(t)));
     return el("div", { style: { marginTop: "14px" } },
       el("div", { class: "btn-row", style: { gap: "10px", alignItems: "baseline" } },
         el("span", { style: { fontWeight: "700", fontSize: "0.95rem" } }, `Group ${g}`),
+        el("span", { class: "muted small" }, `${left}/${list.length} left`),
         el("span", { class: "muted small" }, GROUP_NOTE[g] || "")),
       grid);
   });
 
   return el("div", { class: "panel" },
-    el("h2", {}, `Available teams (${avail.length})`,
-      myTurn ? null : el("span", { class: "muted small" }, " — wait for your turn to pick")),
+    el("h2", {}, `Teams by group `,
+      el("span", { class: "muted small" }, `— ${availCount} of ${inPlay.length} still available`),
+      myTurn ? null : el("span", { class: "muted small" }, " · wait for your turn to pick")),
     el("p", { class: "muted small", style: { margin: "0 0 4px" } },
-      "Grouped by World Cup group; top two of each group reach the Round of 32. Ordered by FIFA seed within each group."),
+      "Drafted teams stay in their group, greyed out. Top two of each group reach the Round of 32; ordered by FIFA seed within each group."),
     sections);
 }
 
