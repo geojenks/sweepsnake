@@ -1,14 +1,14 @@
 {
   "competition": "WC",
   "season": "FIFA World Cup",
-  "note": "All 48 teams from football-data.org. fifaRank is an approximate seeding hint only.",
+  "note": "All 48 teams from football-data.org. fifaRank = real FIFA world ranking (April 2026) renumbered 1..48; used only as a display/sort seed, not for scoring or league tiers.",
   "teams": [
     {
-      "id": "762",
-      "name": "Argentina",
-      "tla": "ARG",
-      "flag": "🇦🇷",
-      "crest": "https://crests.football-data.org/762.png",
+      "id": "773",
+      "name": "France",
+      "tla": "FRA",
+      "flag": "🇫🇷",
+      "crest": "https://crests.football-data.org/773.svg",
       "fifaRank": 1
     },
     {
@@ -20,11 +20,11 @@
       "fifaRank": 2
     },
     {
-      "id": "773",
-      "name": "France",
-      "tla": "FRA",
-      "flag": "🇫🇷",
-      "crest": "https://crests.football-data.org/773.svg",
+      "id": "762",
+      "name": "Argentina",
+      "tla": "ARG",
+      "flag": "🇦🇷",
+      "crest": "https://crests.football-data.org/762.png",
       "fifaRank": 3
     },
     {
@@ -36,19 +36,19 @@
       "fifaRank": 4
     },
     {
-      "id": "764",
-      "name": "Brazil",
-      "tla": "BRA",
-      "flag": "🇧🇷",
-      "crest": "https://crests.football-data.org/764.svg",
-      "fifaRank": 5
-    },
-    {
       "id": "765",
       "name": "Portugal",
       "tla": "POR",
       "flag": "🇵🇹",
       "crest": "https://crests.football-data.org/765.svg",
+      "fifaRank": 5
+    },
+    {
+      "id": "764",
+      "name": "Brazil",
+      "tla": "BRA",
+      "flag": "🇧🇷",
+      "crest": "https://crests.football-data.org/764.svg",
       "fifaRank": 6
     },
     {
@@ -60,12 +60,20 @@
       "fifaRank": 7
     },
     {
+      "id": "815",
+      "name": "Morocco",
+      "tla": "MAR",
+      "flag": "🇲🇦",
+      "crest": "https://crests.football-data.org/morocco.svg",
+      "fifaRank": 8
+    },
+    {
       "id": "805",
       "name": "Belgium",
       "tla": "BEL",
       "flag": "🇧🇪",
       "crest": "https://crests.football-data.org/805.svg",
-      "fifaRank": 8
+      "fifaRank": 9
     },
     {
       "id": "759",
@@ -73,7 +81,7 @@
       "tla": "GER",
       "flag": "🇩🇪",
       "crest": "https://crests.football-data.org/759.svg",
-      "fifaRank": 9
+      "fifaRank": 10
     },
     {
       "id": "799",
@@ -81,14 +89,6 @@
       "tla": "CRO",
       "flag": "🇭🇷",
       "crest": "https://crests.football-data.org/799.svg",
-      "fifaRank": 10
-    },
-    {
-      "id": "815",
-      "name": "Morocco",
-      "tla": "MAR",
-      "flag": "🇲🇦",
-      "crest": "https://crests.football-data.org/morocco.svg",
       "fifaRank": 11
     },
     {
@@ -100,11 +100,11 @@
       "fifaRank": 12
     },
     {
-      "id": "758",
-      "name": "Uruguay",
-      "tla": "URY",
-      "flag": "🇺🇾",
-      "crest": "https://crests.football-data.org/758.svg",
+      "id": "804",
+      "name": "Senegal",
+      "tla": "SEN",
+      "flag": "🇸🇳",
+      "crest": "https://crests.football-data.org/senegal.svg",
       "fifaRank": 13
     },
     {
@@ -124,11 +124,11 @@
       "fifaRank": 15
     },
     {
-      "id": "788",
-      "name": "Switzerland",
-      "tla": "SUI",
-      "flag": "🇨🇭",
-      "crest": "https://crests.football-data.org/788.svg",
+      "id": "758",
+      "name": "Uruguay",
+      "tla": "URY",
+      "flag": "🇺🇾",
+      "crest": "https://crests.football-data.org/758.svg",
       "fifaRank": 16
     },
     {
@@ -140,11 +140,11 @@
       "fifaRank": 17
     },
     {
-      "id": "804",
-      "name": "Senegal",
-      "tla": "SEN",
-      "flag": "🇸🇳",
-      "crest": "https://crests.football-data.org/senegal.svg",
+      "id": "788",
+      "name": "Switzerland",
+      "tla": "SUI",
+      "flag": "🇨🇭",
+      "crest": "https://crests.football-data.org/788.svg",
       "fifaRank": 18
     },
     {
@@ -156,11 +156,11 @@
       "fifaRank": 19
     },
     {
-      "id": "772",
-      "name": "South Korea",
-      "tla": "KOR",
-      "flag": "🇰🇷",
-      "crest": "https://crests.football-data.org/772.png",
+      "id": "803",
+      "name": "Turkey",
+      "tla": "TUR",
+      "flag": "🇹🇷",
+      "crest": "https://crests.football-data.org/803.svg",
       "fifaRank": 20
     },
     {
@@ -180,27 +180,27 @@
       "fifaRank": 22
     },
     {
+      "id": "772",
+      "name": "South Korea",
+      "tla": "KOR",
+      "flag": "🇰🇷",
+      "crest": "https://crests.football-data.org/772.png",
+      "fifaRank": 23
+    },
+    {
       "id": "779",
       "name": "Australia",
       "tla": "AUS",
       "flag": "🇦🇺",
       "crest": "https://crests.football-data.org/779.svg",
-      "fifaRank": 23
-    },
-    {
-      "id": "803",
-      "name": "Turkey",
-      "tla": "TUR",
-      "flag": "🇹🇷",
-      "crest": "https://crests.football-data.org/803.svg",
       "fifaRank": 24
     },
     {
-      "id": "8872",
-      "name": "Norway",
-      "tla": "NOR",
-      "flag": "🇳🇴",
-      "crest": "https://crests.football-data.org/813.svg",
+      "id": "778",
+      "name": "Algeria",
+      "tla": "ALG",
+      "flag": "🇩🇿",
+      "crest": "https://crests.football-data.org/algeria.svg",
       "fifaRank": 25
     },
     {
@@ -212,44 +212,20 @@
       "fifaRank": 26
     },
     {
-      "id": "1935",
-      "name": "Ivory Coast",
-      "tla": "CIV",
-      "flag": "🇨🇮",
-      "crest": "https://crests.football-data.org/787.svg",
+      "id": "828",
+      "name": "Canada",
+      "tla": "CAN",
+      "flag": "🇨🇦",
+      "crest": "https://crests.football-data.org/canada.svg",
       "fifaRank": 27
     },
     {
-      "id": "792",
-      "name": "Sweden",
-      "tla": "SWE",
-      "flag": "🇸🇪",
-      "crest": "https://crests.football-data.org/792.svg",
+      "id": "8872",
+      "name": "Norway",
+      "tla": "NOR",
+      "flag": "🇳🇴",
+      "crest": "https://crests.football-data.org/813.svg",
       "fifaRank": 28
-    },
-    {
-      "id": "761",
-      "name": "Paraguay",
-      "tla": "PAR",
-      "flag": "🇵🇾",
-      "crest": "https://crests.football-data.org/761.svg",
-      "fifaRank": 29
-    },
-    {
-      "id": "802",
-      "name": "Tunisia",
-      "tla": "TUN",
-      "flag": "🇹🇳",
-      "crest": "https://crests.football-data.org/tunisia.svg",
-      "fifaRank": 30
-    },
-    {
-      "id": "763",
-      "name": "Ghana",
-      "tla": "GHA",
-      "flag": "🇬🇭",
-      "crest": "https://crests.football-data.org/ghana.svg",
-      "fifaRank": 31
     },
     {
       "id": "1836",
@@ -257,23 +233,31 @@
       "tla": "PAN",
       "flag": "🇵🇦",
       "crest": "https://crests.football-data.org/panama.svg",
+      "fifaRank": 29
+    },
+    {
+      "id": "1935",
+      "name": "Ivory Coast",
+      "tla": "CIV",
+      "flag": "🇨🇮",
+      "crest": "https://crests.football-data.org/787.svg",
+      "fifaRank": 30
+    },
+    {
+      "id": "792",
+      "name": "Sweden",
+      "tla": "SWE",
+      "flag": "🇸🇪",
+      "crest": "https://crests.football-data.org/792.svg",
+      "fifaRank": 31
+    },
+    {
+      "id": "761",
+      "name": "Paraguay",
+      "tla": "PAR",
+      "flag": "🇵🇾",
+      "crest": "https://crests.football-data.org/761.svg",
       "fifaRank": 32
-    },
-    {
-      "id": "828",
-      "name": "Canada",
-      "tla": "CAN",
-      "flag": "🇨🇦",
-      "crest": "https://crests.football-data.org/canada.svg",
-      "fifaRank": 33
-    },
-    {
-      "id": "778",
-      "name": "Algeria",
-      "tla": "ALG",
-      "flag": "🇩🇿",
-      "crest": "https://crests.football-data.org/algeria.svg",
-      "fifaRank": 34
     },
     {
       "id": "798",
@@ -281,7 +265,7 @@
       "tla": "CZE",
       "flag": "🇨🇿",
       "crest": "https://crests.football-data.org/798.svg",
-      "fifaRank": 35
+      "fifaRank": 33
     },
     {
       "id": "8873",
@@ -289,31 +273,15 @@
       "tla": "SCO",
       "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
       "crest": "https://crests.football-data.org/814.svg",
-      "fifaRank": 36
+      "fifaRank": 34
     },
     {
-      "id": "8030",
-      "name": "Qatar",
-      "tla": "QAT",
-      "flag": "🇶🇦",
-      "crest": "https://crests.football-data.org/8030.svg",
-      "fifaRank": 37
-    },
-    {
-      "id": "801",
-      "name": "Saudi Arabia",
-      "tla": "KSA",
-      "flag": "🇸🇦",
-      "crest": "https://crests.football-data.org/saudi_arabia.svg",
-      "fifaRank": 38
-    },
-    {
-      "id": "774",
-      "name": "South Africa",
-      "tla": "RSA",
-      "flag": "🇿🇦",
-      "crest": "https://crests.football-data.org/9396.svg",
-      "fifaRank": 39
+      "id": "802",
+      "name": "Tunisia",
+      "tla": "TUN",
+      "flag": "🇹🇳",
+      "crest": "https://crests.football-data.org/tunisia.svg",
+      "fifaRank": 35
     },
     {
       "id": "1934",
@@ -321,7 +289,7 @@
       "tla": "COD",
       "flag": "🇨🇩",
       "crest": "https://crests.football-data.org/congo_dr.svg",
-      "fifaRank": 40
+      "fifaRank": 36
     },
     {
       "id": "8070",
@@ -329,6 +297,38 @@
       "tla": "UZB",
       "flag": "🇺🇿",
       "crest": "https://crests.football-data.org/8070.png",
+      "fifaRank": 37
+    },
+    {
+      "id": "8030",
+      "name": "Qatar",
+      "tla": "QAT",
+      "flag": "🇶🇦",
+      "crest": "https://crests.football-data.org/8030.svg",
+      "fifaRank": 38
+    },
+    {
+      "id": "8062",
+      "name": "Iraq",
+      "tla": "IRQ",
+      "flag": "🇮🇶",
+      "crest": "https://crests.football-data.org/iraq.svg",
+      "fifaRank": 39
+    },
+    {
+      "id": "774",
+      "name": "South Africa",
+      "tla": "RSA",
+      "flag": "🇿🇦",
+      "crest": "https://crests.football-data.org/9396.svg",
+      "fifaRank": 40
+    },
+    {
+      "id": "801",
+      "name": "Saudi Arabia",
+      "tla": "KSA",
+      "flag": "🇸🇦",
+      "crest": "https://crests.football-data.org/saudi_arabia.svg",
       "fifaRank": 41
     },
     {
@@ -340,28 +340,12 @@
       "fifaRank": 42
     },
     {
-      "id": "8062",
-      "name": "Iraq",
-      "tla": "IRQ",
-      "flag": "🇮🇶",
-      "crest": "https://crests.football-data.org/iraq.svg",
-      "fifaRank": 43
-    },
-    {
       "id": "1060",
       "name": "Bosnia-Herzegovina",
       "tla": "BIH",
       "flag": "🇧🇦",
       "crest": "https://crests.football-data.org/bosnia.svg",
-      "fifaRank": 44
-    },
-    {
-      "id": "783",
-      "name": "New Zealand",
-      "tla": "NZL",
-      "flag": "🇳🇿",
-      "crest": "https://crests.football-data.org/783.svg",
-      "fifaRank": 45
+      "fifaRank": 43
     },
     {
       "id": "1930",
@@ -369,7 +353,15 @@
       "tla": "CPV",
       "flag": "🇨🇻",
       "crest": "https://crests.football-data.org/cape_verde.svg",
-      "fifaRank": 46
+      "fifaRank": 44
+    },
+    {
+      "id": "763",
+      "name": "Ghana",
+      "tla": "GHA",
+      "flag": "🇬🇭",
+      "crest": "https://crests.football-data.org/ghana.svg",
+      "fifaRank": 45
     },
     {
       "id": "9460",
@@ -377,7 +369,7 @@
       "tla": "CUW",
       "flag": "🇨🇼",
       "crest": "https://crests.football-data.org/curacao.svg",
-      "fifaRank": 47
+      "fifaRank": 46
     },
     {
       "id": "836",
@@ -385,6 +377,14 @@
       "tla": "HAI",
       "flag": "🇭🇹",
       "crest": "https://crests.football-data.org/haiti.svg",
+      "fifaRank": 47
+    },
+    {
+      "id": "783",
+      "name": "New Zealand",
+      "tla": "NZL",
+      "flag": "🇳🇿",
+      "crest": "https://crests.football-data.org/783.svg",
       "fifaRank": 48
     }
   ]
