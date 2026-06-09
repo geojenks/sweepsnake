@@ -3,17 +3,22 @@ import {
   computeStandings, computeLeagues, computePlayerLeague, tierColour,
   leaguePrize, playerLeaguePrize,
 } from "./engine.js";
-import { onTableChange } from "./supabase.js";
+import { onTableChange, getDraftPicks } from "./supabase.js";
 import { $, el, fmtSigned, playerColour, loadLiveData, showError } from "./app.js";
 
 const root = $("#content");
-const state = { selectedLeague: 1, data: null };
+const state = { selectedLeague: 1, data: null, orderOf: new Map() };
 
 start();
 
 async function start() {
   try {
-    state.data = await loadLiveData();
+    const [data, picks] = await Promise.all([loadLiveData(), getDraftPicks()]);
+    state.data = data;
+    // teamId -> overall draft pick. Used to break ties in choice order, so
+    // before any match is played the leagues read down in the order teams were
+    // drafted (league 1 = the full run of picks, league 2 = that minus tier 1…).
+    state.orderOf = new Map(picks.map((p) => [p.team_id, p.overall_pick]));
   } catch (e) {
     showError(root, e);
     return;
@@ -47,21 +52,43 @@ function render() {
   const teamMeta = new Map(teams.map((t) => [t.id, t]));
   const tierOf = new Map(drafted.map((t) => [t.id, t.tier]));
   const ownerOf = new Map(drafted.map((t) => [t.id, t.player_id]));
-  const getName = (id) => teamMeta.get(id)?.name || id;
+  const slotOf = (pid) => playerById.get(pid)?.slot ?? 99;
+  // Tie-break key: teams level on points sort by draft choice order (zero-padded
+  // so the string compare matches numeric order). Before any match this makes the
+  // whole table read in pick order; afterwards it's just the final tiebreak.
+  const orderKey = (id) => String(state.orderOf.get(id) ?? 999).padStart(3, "0");
 
   const nPlayers = Number(config.n_players) || players.length || 6;
   const prizes = { league: leaguePrize(nPlayers), player: playerLeaguePrize(nPlayers) };
 
   const engineTeams = drafted.map((t) => ({ teamId: t.id, tier: t.tier }));
-  const standings = computeStandings(canonicalMatches(matches));
-  const leagues = computeLeagues(engineTeams, standings, nRounds, getName);
-  const playerLeague = computePlayerLeague(ownerOf, standings);
+  // Start every drafted team at zero so the tables are fully populated before
+  // kick-off; finished matches then overlay real points.
+  const standings = withAllDrafted(computeStandings(canonicalMatches(matches)), drafted);
+  const leagues = computeLeagues(engineTeams, standings, nRounds, orderKey);
+  const playerLeague = computePlayerLeague(ownerOf, standings)
+    .sort((a, b) => b.total - a.total || b.gd - a.gd || b.gf - a.gf
+      || slotOf(a.playerId) - slotOf(b.playerId));
 
   root.append(playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, prizes.player));
   root.append(filterBar(leagues, prizes.league));
   root.append(teamTable(leagues, teamMeta, tierOf, ownerOf, playerById));
   root.append(el("p", { class: "footnote" },
     `${standings.size} teams · ${matches.filter((m) => m.status === "FINISHED").length} matches played · live from Supabase.`));
+}
+
+// Ensure every drafted team has a standings row, even with no matches played yet,
+// so the leagues are populated with zeros from the moment the draft closes.
+function withAllDrafted(standings, drafted) {
+  for (const t of drafted) {
+    if (!standings.has(t.id)) {
+      standings.set(t.id, {
+        teamId: t.id, played: 0, w: 0, d: 0, l: 0,
+        gf: 0, ga: 0, gd: 0, matchPoints: 0, bonusPoints: 0, total: 0,
+      });
+    }
+  }
+  return standings;
 }
 
 // Matches in the DB are already in the engine's canonical shape; just pass the
