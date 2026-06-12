@@ -5,10 +5,10 @@
 // bracket as slot labels ("Winner Group A", "3rd C/E/F/H/I", "Winner of M73").
 import { computeStandings, rankComparator } from "./engine.js";
 import { onTableChange } from "./supabase.js";
-import { $, el, fmtSigned, playerColour, loadLiveData, showError } from "./app.js";
+import { $, el, fmtSigned, playerColour, playerSubname, loadLiveData, showError } from "./app.js";
 
 const root = $("#content");
-const state = { data: null, fixtures: null, teamsFile: null };
+const state = { data: null, fixtures: null, teamsFile: null, view: "group" };
 
 const GROUPS = "ABCDEFGHIJKL".split("");
 const KO_ROUNDS = [
@@ -83,8 +83,28 @@ function render() {
 
   root.innerHTML = "";
   root.append(intro(playedCount));
-  root.append(groupSection(groupStage, meta, playerById, dbById, groupStandings));
+  root.append(viewToggle());
+  if (state.view === "chrono") {
+    // Tables first, then every group fixture in one chronological list.
+    root.append(groupSection(groupStage, meta, playerById, dbById, groupStandings, false));
+    root.append(chronoFixturesSection(groupStage, meta, playerById, dbById));
+  } else {
+    // Each group card carries its own fixtures (default).
+    root.append(groupSection(groupStage, meta, playerById, dbById, groupStandings, true));
+  }
   root.append(knockoutSection(knockout, meta, playerById, dbById));
+}
+
+function viewToggle() {
+  const bar = el("div", { class: "btn-row", style: { margin: "0 0 14px" } });
+  const mk = (label, v) => el("button", {
+    class: "btn" + (state.view === v ? " active" : ""),
+    onclick: () => { if (state.view !== v) { state.view = v; render(); } },
+  }, label);
+  bar.append(mk("Group view", "group"), mk("Chronological view", "chrono"),
+    el("span", { class: "muted small", style: { marginLeft: "4px" } },
+      state.view === "chrono" ? "fixtures below the tables, by date" : "fixtures grouped with their table"));
+  return bar;
 }
 
 function intro(played) {
@@ -110,29 +130,56 @@ function teamCell(id, meta, playerById, extra = {}) {
     el("span", { style: { color: colour, fontWeight: owner ? "600" : "400" } }, m.name || id));
 }
 
-function groupSection(groupStage, meta, playerById, dbById, groupStandings) {
+// Sorted mini-standings rows for one group (blank stats for teams yet to play).
+function groupRows(g, groupStage, groupStandings, meta) {
+  const teamIds = [...new Set(groupStage.filter((f) => f.group === g)
+    .flatMap((f) => [f.homeId, f.awayId]))];
+  const blank = (id) => ({ teamId: id, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, matchPoints: 0, bonusPoints: 0, total: 0 });
+  return teamIds.map((id) => groupStandings.get(id) || blank(id))
+    .sort(rankComparator((id) => meta.get(id)?.name || id));
+}
+
+function groupSection(groupStage, meta, playerById, dbById, groupStandings, withFixtures) {
   const grid = el("div", { class: "cards", style: { gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))" } });
 
   for (const g of GROUPS) {
-    const fixtures = groupStage.filter((f) => f.group === g)
-      .sort((a, b) => a.utcDate.localeCompare(b.utcDate));
-    const teamIds = [...new Set(fixtures.flatMap((f) => [f.homeId, f.awayId]))];
-
-    // Mini standings: rank by group points (blank stats for teams yet to play).
-    const blank = (id) => ({ teamId: id, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, matchPoints: 0, bonusPoints: 0, total: 0 });
-    const rows = teamIds.map((id) => groupStandings.get(id) || blank(id))
-      .sort(rankComparator((id) => meta.get(id)?.name || id));
-
-    grid.append(el("div", { class: "panel", style: { margin: 0 } },
+    const rows = groupRows(g, groupStage, groupStandings, meta);
+    const card = el("div", { class: "panel", style: { margin: 0 } },
       el("h2", {}, `Group ${g}`),
-      standingsTable(rows, meta, playerById),
-      el("div", { style: { marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" } },
-        fixtures.map((f) => fixtureRow(f, meta, playerById, dbById)))));
+      standingsTable(rows, meta, playerById));
+    if (withFixtures) {
+      const fixtures = groupStage.filter((f) => f.group === g)
+        .sort((a, b) => a.utcDate.localeCompare(b.utcDate));
+      card.append(el("div", { style: { marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" } },
+        fixtures.map((f) => fixtureRow(f, meta, playerById, dbById))));
+    }
+    grid.append(card);
   }
 
   return el("div", {},
-    el("h2", { style: { margin: "4px 2px 12px", fontSize: "1.05rem" } }, "Group stage"),
+    el("h2", { style: { margin: "4px 2px 12px", fontSize: "1.05rem" } },
+      withFixtures ? "Group stage" : "Group tables"),
     grid);
+}
+
+// Chronological view: all 72 group fixtures in one date-ordered list (each tagged
+// with its group), rendered below the tables.
+function chronoFixturesSection(groupStage, meta, playerById, dbById) {
+  const fixtures = [...groupStage].sort((a, b) => a.utcDate.localeCompare(b.utcDate));
+  const list = el("div", { style: { display: "flex", flexDirection: "column", gap: "6px", marginTop: "10px" } },
+    fixtures.map((f) => fixtureRow(f, meta, playerById, dbById, f.group)));
+  return el("div", { class: "panel" },
+    el("h2", {}, "Group fixtures ", el("span", { class: "muted small" }, "— in kick-off order")),
+    list);
+}
+
+// Tiny owner line under a team: gamertag + real name, for the standings tables.
+function ownerMini(id, meta, playerById) {
+  const owner = playerById.get((meta.get(id) || {}).player_id);
+  if (!owner) return null;
+  const sub = playerSubname(owner);
+  return el("div", { class: "muted", style: { fontSize: "0.6rem", lineHeight: "1.1", marginTop: "1px" } },
+    owner.name + (sub ? ` · ${sub}` : ""));
 }
 
 function standingsTable(rows, meta, playerById) {
@@ -142,7 +189,9 @@ function standingsTable(rows, meta, playerById) {
     const top2 = i < 2;
     const tr = el("tr", {},
       el("td", { class: "l pos num" }, i + 1),
-      el("td", { class: "l" }, teamCell(s.teamId, meta, playerById)),
+      el("td", { class: "l" }, el("div", { style: { display: "flex", flexDirection: "column" } },
+        teamCell(s.teamId, meta, playerById),
+        ownerMini(s.teamId, meta, playerById))),
       el("td", { class: "num" }, s.played),
       el("td", { class: "num" }, fmtSigned(s.gd)),
       el("td", { class: "total" }, s.total));
@@ -156,7 +205,7 @@ function standingsTable(rows, meta, playerById) {
       body));
 }
 
-function fixtureRow(f, meta, playerById, dbById) {
+function fixtureRow(f, meta, playerById, dbById, groupTag) {
   const db = dbById.get(f.id);
   const finished = db && db.status === "FINISHED" && db.home_score != null;
   const score = finished
@@ -164,6 +213,7 @@ function fixtureRow(f, meta, playerById, dbById) {
         `${db.home_score}–${db.away_score}`)
     : el("span", { class: "num muted", style: { minWidth: "44px", textAlign: "center" } }, "––");
 
+  const groupPrefix = groupTag ? `Grp ${groupTag}  ·  ` : "";
   const penLine = finished && pen(db) ? `  ·  ${pen(db)}` : "";
   return el("div", {
     style: { display: "flex", flexDirection: "column", gap: "2px",
@@ -177,7 +227,7 @@ function fixtureRow(f, meta, playerById, dbById) {
       score,
       el("span", { style: { textAlign: "left" } }, teamCell(f.awayId, meta, playerById))),
     el("div", { class: "muted", style: { fontSize: "0.66rem", textAlign: "center" } },
-      fmtDate(f.utcDate) + (finished ? "  ·  FT" : "") + penLine));
+      groupPrefix + fmtDate(f.utcDate) + (finished ? "  ·  FT" : "") + penLine));
 }
 
 const pen = (db) => db.match_type === "PENALTIES" && db.pen_home != null
