@@ -3,7 +3,7 @@ name: Sync results
 # Pulls World Cup results from football-data.org into Supabase.
 on:
   schedule:
-    - cron: "0 */2 * * *"   # every 2 hours (UTC) during the tournament
+    - cron: "*/5 * * * *"   # every 5 minutes during the tournament
   workflow_dispatch: {}      # manual "Run workflow" button
 
 # Avoid overlapping runs.
