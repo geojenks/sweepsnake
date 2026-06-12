@@ -123,8 +123,10 @@ function filterBar(leagues, prize) {
 function teamTable(leagues, teamMeta, tierOf, ownerOf, playerById) {
   const league = leagues[state.selectedLeague - 1];
   const head = ["Tr", "#", "Team", "Player", "P", "W", "D", "L", "GF", "GA", "GD", "Pts", "Bns", "Total"];
+  // Let the Player column soak up the table's slack width (i === 3); the Team
+  // column then shrinks to just its flag + name instead of sprawling.
   const thead = el("tr", {}, head.map((h, i) =>
-    el("th", { class: i < 4 ? "l" : "" }, h)));
+    el("th", { class: i < 4 ? "l" : "", style: i === 3 ? { width: "100%" } : {} }, h)));
   const body = el("tbody");
 
   league.members.forEach((s, idx) => {
@@ -137,7 +139,7 @@ function teamTable(leagues, teamMeta, tierOf, ownerOf, playerById) {
       el("td", { class: "l pos num" }, idx + 1),
       el("td", { class: "l" }, el("span", { class: "team-cell" },
         el("span", { class: "flag" }, meta?.flag || ""), meta?.name || s.teamId)),
-      el("td", { class: "l owner", style: { color: colour } }, ownerLabel(player)),
+      el("td", { class: "l owner", style: { color: colour, width: "100%" } }, ownerLabel(player)),
       el("td", { class: "num" }, s.played),
       el("td", { class: "num" }, s.w),
       el("td", { class: "num" }, s.d),
@@ -156,21 +158,25 @@ function teamTable(leagues, teamMeta, tierOf, ownerOf, playerById) {
     el("table", { class: "board" }, el("thead", {}, thead), body));
 }
 
-// Real name front-and-centre with the gamertag as a muted subline (player league).
+// Gamertag (the "fun name") big and bold, with the owner's real name as a small
+// grey subline beneath (player league).
 function playerNameCell(player) {
   if (!player) return "—";
   const sub = playerSubname(player);
   if (!sub) return player.name;
   return el("span", { style: { display: "inline-flex", flexDirection: "column", lineHeight: "1.15" } },
-    el("span", { style: { fontWeight: "700" } }, sub),
-    el("span", { class: "muted", style: { fontSize: "0.72rem", fontWeight: "400" } }, player.name));
+    el("span", { style: { fontWeight: "700" } }, player.name),
+    el("span", { class: "muted", style: { fontSize: "0.72rem", fontWeight: "400" } }, sub));
 }
 
-// Compact owner label for the narrow team-league column: real name, handle on hover.
+// Team-league Player column: gamertag, then the owner's real name small in grey.
 function ownerLabel(player) {
   if (!player) return "—";
   const sub = playerSubname(player);
-  return el("span", { title: sub ? player.name : "" }, sub || player.name);
+  if (!sub) return player.name;
+  return el("span", {},
+    player.name,
+    el("span", { class: "muted", style: { fontSize: "0.72rem", fontWeight: "400", marginLeft: "6px" } }, sub));
 }
 
 function playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, prize) {
