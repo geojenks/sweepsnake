@@ -173,13 +173,20 @@ function chronoFixturesSection(groupStage, meta, playerById, dbById) {
     list);
 }
 
-// Tiny owner line under a team: gamertag + real name, for the standings tables.
+// Tiny owner line under a team: gamertag + real name.
 function ownerMini(id, meta, playerById) {
   const owner = playerById.get((meta.get(id) || {}).player_id);
   if (!owner) return null;
   const sub = playerSubname(owner);
   return el("div", { class: "muted", style: { fontSize: "0.6rem", lineHeight: "1.1", marginTop: "1px" } },
     owner.name + (sub ? ` · ${sub}` : ""));
+}
+
+function fixtureTeamCol(id, meta, playerById, align) {
+  const mini = ownerMini(id, meta, playerById);
+  return el("div", { style: { display: "flex", flexDirection: "column", alignItems: align === "right" ? "flex-end" : "flex-start" } },
+    teamCell(id, meta, playerById),
+    mini);
 }
 
 function standingsTable(rows, meta, playerById) {
@@ -223,9 +230,9 @@ function fixtureRow(f, meta, playerById, dbById, groupTag) {
       class: "small",
       style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "8px" },
     },
-      el("span", { style: { textAlign: "right" } }, teamCell(f.homeId, meta, playerById)),
+      fixtureTeamCol(f.homeId, meta, playerById, "right"),
       score,
-      el("span", { style: { textAlign: "left" } }, teamCell(f.awayId, meta, playerById))),
+      fixtureTeamCol(f.awayId, meta, playerById, "left")),
     el("div", { class: "muted", style: { fontSize: "0.66rem", textAlign: "center" } },
       groupPrefix + fmtDate(f.utcDate) + (finished ? "  ·  FT" : "") + penLine));
 }
