@@ -4,7 +4,7 @@ import {
   leaguePrize, playerLeaguePrize,
 } from "./engine.js";
 import { onTableChange, getDraftPicks } from "./supabase.js";
-import { $, el, fmtSigned, playerColour, loadLiveData, showError } from "./app.js";
+import { $, el, fmtSigned, playerColour, playerSubname, loadLiveData, showError } from "./app.js";
 
 const root = $("#content");
 const state = { selectedLeague: 1, data: null, orderOf: new Map() };
@@ -137,7 +137,7 @@ function teamTable(leagues, teamMeta, tierOf, ownerOf, playerById) {
       el("td", { class: "l pos num" }, idx + 1),
       el("td", { class: "l" }, el("span", { class: "team-cell" },
         el("span", { class: "flag" }, meta?.flag || ""), meta?.name || s.teamId)),
-      el("td", { class: "l owner", style: { color: colour } }, player?.name || "—"),
+      el("td", { class: "l owner", style: { color: colour } }, ownerLabel(player)),
       el("td", { class: "num" }, s.played),
       el("td", { class: "num" }, s.w),
       el("td", { class: "num" }, s.d),
@@ -154,6 +154,23 @@ function teamTable(leagues, teamMeta, tierOf, ownerOf, playerById) {
 
   return el("div", { class: "table-scroll" },
     el("table", { class: "board" }, el("thead", {}, thead), body));
+}
+
+// Real name front-and-centre with the gamertag as a muted subline (player league).
+function playerNameCell(player) {
+  if (!player) return "—";
+  const sub = playerSubname(player);
+  if (!sub) return player.name;
+  return el("span", { style: { display: "inline-flex", flexDirection: "column", lineHeight: "1.15" } },
+    el("span", { style: { fontWeight: "700" } }, sub),
+    el("span", { class: "muted", style: { fontSize: "0.72rem", fontWeight: "400" } }, player.name));
+}
+
+// Compact owner label for the narrow team-league column: real name, handle on hover.
+function ownerLabel(player) {
+  if (!player) return "—";
+  const sub = playerSubname(player);
+  return el("span", { title: sub ? player.name : "" }, sub || player.name);
 }
 
 function playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, prize) {
@@ -176,7 +193,7 @@ function playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, 
       }, teamMeta.get(id)?.flag || ""));
     const tr = el("tr", { style: { borderLeft: `4px solid ${colour}` } },
       el("td", { class: "l pos num" }, idx + 1),
-      el("td", { class: "l owner", style: { color: colour } }, player?.name || "—"),
+      el("td", { class: "l owner", style: { color: colour } }, playerNameCell(player)),
       el("td", { class: "l team-list" }, flags),
       el("td", { class: "num" }, r.w),
       el("td", { class: "num" }, r.d),

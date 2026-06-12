@@ -2,14 +2,21 @@
 // Supabase, in the canonical shape js/engine.js expects. Runs in GitHub Actions
 // (Node 18+, uses global fetch — no npm dependencies).
 //
-// Required environment variables (set as GitHub Actions secrets):
-//   FOOTBALL_DATA_API_KEY   football-data.org token
+// The ONLY secret you must set is FOOTBALL_DATA_API_KEY (football-data.org token).
+// The Supabase URL and key default to the public anon values that already ship in
+// js/config.js — the anon key has write access because the tables' RLS is open by
+// design (a private friends' sweepstake). Override via env if you prefer:
 //   SUPABASE_URL            https://<ref>.supabase.co
-//   SUPABASE_SERVICE_KEY    Supabase service_role key (server-side only!)
+//   SUPABASE_SERVICE_KEY    service_role key (server-side only) — used if present
+//   SUPABASE_ANON_KEY       anon key (fallback)
+
+// Public defaults, mirrored from js/config.js (safe to commit; anon-only access).
+const DEFAULT_URL = "https://tkbkeqtywttaasyutmsj.supabase.co";
+const DEFAULT_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYmtlcXR5d3R0YWFzeXV0bXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTU4NjksImV4cCI6MjA5NTg5MTg2OX0.begyj0OQidbXTl-3bdjjHUcud4xjpeKt8AWXQnSiZ2A";
 
 const FD_KEY = required("FOOTBALL_DATA_API_KEY");
-const SB_URL = required("SUPABASE_URL").replace(/\/+$/, "");
-const SB_KEY = required("SUPABASE_SERVICE_KEY");
+const SB_URL = (process.env.SUPABASE_URL || DEFAULT_URL).replace(/\/+$/, "");
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || DEFAULT_ANON;
 const COMPETITION = process.env.COMPETITION_CODE || "WC";
 
 function required(name) {

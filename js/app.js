@@ -32,6 +32,22 @@ export function playerColour(player) {
   return PLAYER_COLOURS[(slot - 1) % PLAYER_COLOURS.length];
 }
 
+// ---- real-name "subnames" behind the gamertags ----
+// Keyed by a normalised handle (lowercase, alphanumerics only) so it survives
+// apostrophes/spacing. Returns the short real name, or null if unknown.
+const SUBNAMES = {
+  seandonpickford: "Sean",
+  straitofhormousadembele: "Joe",
+  thomastwoshell: "Geo",
+  nicoolgilly: "Pete",
+  kluiverteye: "Logan",
+  storyoftheharrykane: "Barney",
+};
+const normName = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+export function playerSubname(player) {
+  return SUBNAMES[normName(player?.name)] || null;
+}
+
 // ---- "who am I" (no login; just a remembered player id) ----
 const IDENTITY_KEY = "sweepsnake_player_id";
 export const getIdentity = () => localStorage.getItem(IDENTITY_KEY);

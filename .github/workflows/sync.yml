@@ -21,7 +21,11 @@ jobs:
           node-version: "20"
       - name: Sync
         env:
+          # The only required secret. Supabase URL + (anon) key default to the
+          # public values in js/config.js, so nothing else needs configuring.
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          # Optional overrides — only set these if you want to use the service_role
+          # key instead of the public anon key:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: node scripts/sync.mjs

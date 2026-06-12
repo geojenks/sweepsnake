@@ -40,9 +40,12 @@ async function start() {
 }
 
 // ---- helpers ----
-const fmtDate = (utc) => new Date(utc).toLocaleString(undefined, {
-  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-});
+// Always show UK kick-off time. The whole tournament (11 Jun–19 Jul 2026) sits
+// in British Summer Time, so we render in Europe/London and label it BST.
+const fmtDate = (utc) => new Date(utc).toLocaleString("en-GB", {
+  weekday: "short", day: "numeric", month: "short",
+  hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London",
+}) + " BST";
 
 function canonicalMatches(matches) {
   return matches
@@ -161,15 +164,20 @@ function fixtureRow(f, meta, playerById, dbById) {
         `${db.home_score}–${db.away_score}`)
     : el("span", { class: "num muted", style: { minWidth: "44px", textAlign: "center" } }, "––");
 
+  const penLine = finished && pen(db) ? `  ·  ${pen(db)}` : "";
   return el("div", {
-    class: "small",
-    style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "8px",
-             padding: "4px 8px", background: "var(--bg-row)", borderRadius: "7px" },
-    title: finished ? `${pen(db)}` : fmtDate(f.utcDate),
+    style: { display: "flex", flexDirection: "column", gap: "2px",
+             padding: "5px 8px", background: "var(--bg-row)", borderRadius: "7px" },
   },
-    el("span", { style: { textAlign: "right" } }, teamCell(f.homeId, meta, playerById)),
-    score,
-    el("span", { style: { textAlign: "left" } }, teamCell(f.awayId, meta, playerById)));
+    el("div", {
+      class: "small",
+      style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "8px" },
+    },
+      el("span", { style: { textAlign: "right" } }, teamCell(f.homeId, meta, playerById)),
+      score,
+      el("span", { style: { textAlign: "left" } }, teamCell(f.awayId, meta, playerById))),
+    el("div", { class: "muted", style: { fontSize: "0.66rem", textAlign: "center" } },
+      fmtDate(f.utcDate) + (finished ? "  ·  FT" : "") + penLine));
 }
 
 const pen = (db) => db.match_type === "PENALTIES" && db.pen_home != null
@@ -229,9 +237,9 @@ function koCard(m, meta, playerById, dbById) {
   };
 
   return el("div", { class: "winner-card", style: { borderLeftColor: finished ? "var(--gold)" : "var(--line)", padding: "10px 12px" } },
-    el("div", { class: "lg", style: { display: "flex", justifyContent: "space-between" } },
+    el("div", { class: "lg", style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "6px" } },
       el("span", {}, `M${m.matchNo}`),
-      el("span", {}, fmtDate(m.utcDate))),
+      el("span", { style: { fontSize: "0.66rem", whiteSpace: "nowrap" } }, fmtDate(m.utcDate))),
     el("div", { style: { display: "flex", flexDirection: "column", gap: "4px", marginTop: "6px" } },
       scoreLine(homeId, m.home),
       scoreLine(awayId, m.away)),
