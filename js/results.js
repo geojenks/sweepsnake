@@ -175,11 +175,13 @@ function chronoFixturesSection(groupStage, meta, playerById, dbById) {
 
 // Tiny owner line under a team: gamertag + real name.
 function ownerMini(id, meta, playerById) {
-  const owner = playerById.get((meta.get(id) || {}).player_id);
+  const m = meta.get(id) || {};
+  const owner = playerById.get(m.player_id);
   if (!owner) return null;
   const sub = playerSubname(owner);
+  const tierPart = m.tier != null ? `T${m.tier}  ·  ` : "";
   return el("div", { class: "muted", style: { fontSize: "0.6rem", lineHeight: "1.1", marginTop: "1px" } },
-    owner.name + (sub ? ` · ${sub}` : ""));
+    tierPart + owner.name + (sub ? ` · ${sub}` : ""));
 }
 
 function fixtureTeamCol(id, meta, playerById, align) {
