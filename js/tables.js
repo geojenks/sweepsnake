@@ -201,6 +201,7 @@ function playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, 
       el("td", { class: "l pos num" }, idx + 1),
       el("td", { class: "l owner", style: { color: colour } }, playerNameCell(player)),
       el("td", { class: "l team-list" }, flags),
+      el("td", { class: "num" }, r.played),
       el("td", { class: "num" }, r.w),
       el("td", { class: "num" }, r.d),
       el("td", { class: "num" }, r.l),
@@ -212,7 +213,7 @@ function playerLeaguePanel(playerLeague, playerById, ownerOf, teamMeta, tierOf, 
     body.append(tr);
   });
 
-  const head = ["#", "Player", "Teams (by tier)", "W", "D", "L", "GD", "Pts", "Bns", "Total"];
+  const head = ["#", "Player", "Teams (by tier)", "P", "W", "D", "L", "GD", "Pts", "Bns", "Total"];
   return el("div", { class: "panel" },
     el("h2", {}, "Player league ",
       el("span", { class: "muted small" }, "— total across every team owned · winner takes ",
