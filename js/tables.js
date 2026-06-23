@@ -54,7 +54,7 @@ function getPopup() {
   if (!_popup) {
     _popup = el("div", { style: {
       position: "fixed", zIndex: "1000",
-      background: "var(--bg-panel)", border: "1px solid var(--line)",
+      background: "var(--bg-raised)", border: "1px solid var(--line)",
       borderRadius: "10px", padding: "10px 14px",
       boxShadow: "0 6px 24px rgba(0,0,0,.5)",
       fontSize: "0.82rem", maxWidth: "290px", lineHeight: "1.5",
