@@ -123,9 +123,6 @@ function matchCard(m, teamMeta, playerById) {
     const watchBtn = el("button", { class: "btn", style: { fontSize: "0.78rem" } }, "▶ Watch highlights");
     watchBtn.onclick = () => {
       watchBtn.remove();
-      // Also reveal the score — you'll see it in the video anyway.
-      revealBtn.style.display = "none";
-      scoreEl.style.display = "";
       videoArea.append(embedFrame(videoId));
     };
     card.append(el("div", { class: "btn-row", style: { marginTop: "2px" } },

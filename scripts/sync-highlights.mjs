@@ -62,6 +62,7 @@ for (const m of matches) {
   url.searchParams.set("type", "video");
   url.searchParams.set("order", "relevance");
   url.searchParams.set("maxResults", "5");
+  url.searchParams.set("videoEmbeddable", "true");
   url.searchParams.set("key", YT_KEY);
 
   try {
