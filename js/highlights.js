@@ -119,22 +119,13 @@ function matchCard(m, teamMeta, playerById) {
 
   const videoArea = el("div", {});
 
-  if (videoId) {
-    const watchBtn = el("button", { class: "btn", style: { fontSize: "0.78rem" } }, "▶ Watch highlights");
-    watchBtn.onclick = () => {
-      watchBtn.remove();
-      videoArea.append(embedFrame(videoId));
-    };
-    card.append(el("div", { class: "btn-row", style: { marginTop: "2px" } },
-      el("span", { style: { display: "flex", alignItems: "center", gap: "8px" } }, revealBtn, scoreEl),
-      watchBtn));
-  } else {
-    card.append(el("div", { class: "btn-row", style: { marginTop: "2px" } },
-      el("span", { style: { display: "flex", alignItems: "center", gap: "8px" } }, revealBtn, scoreEl),
-      el("span", { class: "muted", style: { fontSize: "0.72rem" } }, "Highlights not yet available")));
-  }
+  card.append(el("div", { class: "btn-row", style: { marginTop: "2px" } },
+    el("span", { style: { display: "flex", alignItems: "center", gap: "8px" } }, revealBtn, scoreEl),
+    videoId
+      ? el("a", { href: `https://www.youtube.com/watch?v=${videoId}`, target: "_blank", rel: "noopener", class: "btn", style: { fontSize: "0.78rem", textDecoration: "none" } }, "▶ Watch on YouTube")
+      : el("span", { class: "muted", style: { fontSize: "0.72rem" } }, "Highlights not yet available")));
 
-  card.append(videoArea);
+  if (videoId) card.append(youtubeThumbnail(videoId));
   return card;
 }
 
@@ -146,12 +137,14 @@ function playerLabel(player, align) {
     sub ? el("span", { class: "muted", style: { fontSize: "0.68rem" } }, sub) : null);
 }
 
-function embedFrame(videoId) {
-  return el("div", { style: { position: "relative", paddingTop: "56.25%", marginTop: "8px" } },
-    el("iframe", {
-      src: `https://www.youtube.com/embed/${videoId}?autoplay=1`,
-      style: { position: "absolute", top: "0", left: "0", width: "100%", height: "100%", border: "none", borderRadius: "8px" },
-      allow: "autoplay; fullscreen",
-      allowfullscreen: true,
-    }));
+function youtubeThumbnail(videoId) {
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  // YouTube provides thumbnails at a predictable URL — no embed, no FIFA block.
+  const img = el("img", {
+    src: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+    alt: "Highlights thumbnail",
+    style: { width: "100%", borderRadius: "8px", display: "block", marginTop: "8px", cursor: "pointer" },
+  });
+  img.onclick = () => window.open(url, "_blank", "noopener");
+  return img;
 }
