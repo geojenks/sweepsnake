@@ -36,15 +36,32 @@ const fmtDate = (utc) => new Date(utc).toLocaleString("en-GB", {
   hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London",
 }) + " BST";
 
-// Teams that have played ≥1 game but appear in no remaining (unfinished) match.
+// Teams with no remaining fixture. During the group stage football-data.org
+// sometimes doesn't publish round-3 fixtures until round 2 is complete, so we
+// require a team to have played all 3 group games before marking them out —
+// otherwise mid-group teams with no future row in the DB look eliminated.
 function eliminatedSet(matches) {
-  const played = new Set(), upcoming = new Set();
+  const groupPlayed = new Map(); // teamId -> group games finished
+  const allPlayed   = new Set();
+  const upcoming    = new Set();
+
   for (const m of matches) {
-    const bucket = m.status === "FINISHED" ? played : upcoming;
-    if (m.home_team_id) bucket.add(m.home_team_id);
-    if (m.away_team_id) bucket.add(m.away_team_id);
+    if (m.status === "FINISHED") {
+      if (m.home_team_id) allPlayed.add(m.home_team_id);
+      if (m.away_team_id) allPlayed.add(m.away_team_id);
+      if (m.stage === "GROUP_STAGE") {
+        if (m.home_team_id) groupPlayed.set(m.home_team_id, (groupPlayed.get(m.home_team_id) || 0) + 1);
+        if (m.away_team_id) groupPlayed.set(m.away_team_id, (groupPlayed.get(m.away_team_id) || 0) + 1);
+      }
+    } else {
+      if (m.home_team_id) upcoming.add(m.home_team_id);
+      if (m.away_team_id) upcoming.add(m.away_team_id);
+    }
   }
-  return new Set([...played].filter((id) => !upcoming.has(id)));
+
+  return new Set([...allPlayed].filter((id) =>
+    !upcoming.has(id) && (groupPlayed.get(id) || 0) >= 3
+  ));
 }
 
 // ---- floating info popup ----
