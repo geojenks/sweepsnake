@@ -7,7 +7,7 @@ import { onTableChange, getDraftPicks } from "./supabase.js";
 import { $, el, fmtSigned, playerColour, playerSubname, loadLiveData, showError } from "./app.js";
 
 const root = $("#content");
-const state = { selectedLeague: 1, data: null, orderOf: new Map() };
+const state = { selectedLeague: 1, data: null, teamsFile: null, orderOf: new Map() };
 
 // Live context for popup closures — refreshed on every render().
 let ctx = {};
@@ -16,8 +16,12 @@ start();
 
 async function start() {
   try {
-    const [data, picks] = await Promise.all([loadLiveData(), getDraftPicks()]);
+    const [data, picks, teamsFile] = await Promise.all([
+      loadLiveData(), getDraftPicks(),
+      fetch("data/wc2026_teams.json").then((r) => r.json()),
+    ]);
     state.data = data;
+    state.teamsFile = teamsFile;
     state.orderOf = new Map(picks.map((p) => [p.team_id, p.overall_pick]));
   } catch (e) {
     showError(root, e);
@@ -36,32 +40,62 @@ const fmtDate = (utc) => new Date(utc).toLocaleString("en-GB", {
   hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London",
 }) + " BST";
 
-// Teams with no remaining fixture. During the group stage football-data.org
-// sometimes doesn't publish round-3 fixtures until round 2 is complete, so we
-// require a team to have played all 3 group games before marking them out —
-// otherwise mid-group teams with no future row in the DB look eliminated.
-function eliminatedSet(matches) {
-  const groupPlayed = new Map(); // teamId -> group games finished
-  const allPlayed   = new Set();
-  const upcoming    = new Set();
+// Determine which teams are definitively eliminated.
+//
+// Group stage: only the 4th-place team in a fully-played group (all 4 teams
+// have 3 games) is out. 3rd-place teams are NOT marked out here because 8 of
+// the 12 third-place finishers qualify — that's only decided once all groups
+// have finished. Checking "no upcoming fixture" is intentionally avoided: the
+// round-of-32 draw isn't in football-data.org until after the group stage ends,
+// so a group winner would wrongly appear to have no future game.
+//
+// Knockout stage: the loser of every finished knockout match is out.
+function eliminatedSet(matches, teamsFile) {
+  // Build group membership from the static teams file.
+  const groupMembers = new Map(); // group letter -> [teamId, ...]
+  for (const t of (teamsFile?.teams || [])) {
+    if (!groupMembers.has(t.group)) groupMembers.set(t.group, []);
+    groupMembers.get(t.group).push(t.id);
+  }
+
+  // Accumulate group-stage stats and knockout losers.
+  const gStats = new Map(); // teamId -> { played, pts, gd, gf }
+  const eliminated = new Set();
 
   for (const m of matches) {
-    if (m.status === "FINISHED") {
-      if (m.home_team_id) allPlayed.add(m.home_team_id);
-      if (m.away_team_id) allPlayed.add(m.away_team_id);
-      if (m.stage === "GROUP_STAGE") {
-        if (m.home_team_id) groupPlayed.set(m.home_team_id, (groupPlayed.get(m.home_team_id) || 0) + 1);
-        if (m.away_team_id) groupPlayed.set(m.away_team_id, (groupPlayed.get(m.away_team_id) || 0) + 1);
-      }
+    if (m.status !== "FINISHED") continue;
+    const h = m.home_team_id, a = m.away_team_id;
+    if (!h || !a) continue;
+
+    if (m.stage === "GROUP_STAGE") {
+      if (!gStats.has(h)) gStats.set(h, { played: 0, pts: 0, gd: 0, gf: 0 });
+      if (!gStats.has(a)) gStats.set(a, { played: 0, pts: 0, gd: 0, gf: 0 });
+      const hs = gStats.get(h), as = gStats.get(a);
+      const hg = m.home_score ?? 0, ag = m.away_score ?? 0;
+      hs.played++; hs.gf += hg; hs.gd += hg - ag;
+      as.played++; as.gf += ag; as.gd += ag - hg;
+      if (hg > ag)      { hs.pts += 3; }
+      else if (ag > hg) { as.pts += 3; }
+      else              { hs.pts += 1; as.pts += 1; }
     } else {
-      if (m.home_team_id) upcoming.add(m.home_team_id);
-      if (m.away_team_id) upcoming.add(m.away_team_id);
+      // Knockout match: loser is out.
+      if (m.winner === "HOME") eliminated.add(a);
+      else if (m.winner === "AWAY") eliminated.add(h);
     }
   }
 
-  return new Set([...allPlayed].filter((id) =>
-    !upcoming.has(id) && (groupPlayed.get(id) || 0) >= 3
-  ));
+  // For each fully-completed group, the bottom team (4th place) is eliminated.
+  for (const [, members] of groupMembers) {
+    if (!members.every((id) => (gStats.get(id)?.played || 0) >= 3)) continue;
+    const sorted = [...members].sort((a, b) => {
+      const sa = gStats.get(a) || { pts: 0, gd: 0, gf: 0 };
+      const sb = gStats.get(b) || { pts: 0, gd: 0, gf: 0 };
+      return (sb.pts - sa.pts) || (sb.gd - sa.gd) || (sb.gf - sa.gf);
+    });
+    eliminated.add(sorted[3]); // definite last place
+  }
+
+  return eliminated;
 }
 
 // ---- floating info popup ----
@@ -220,7 +254,7 @@ function render() {
   }
   for (const list of teamsByPlayer.values()) list.sort((a, b) => tierOf.get(a) - tierOf.get(b));
 
-  const eliminated = eliminatedSet(matches);
+  const eliminated = eliminatedSet(matches, state.teamsFile);
 
   // Refresh module-level context so popup closures always read latest data.
   ctx = { standings, matches, teamMeta, tierOf, ownerOf, playerById, teamsByPlayer, eliminated };
