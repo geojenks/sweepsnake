@@ -113,7 +113,7 @@ function intro(played) {
     el("p", { class: "muted small", style: { margin: "0 0 6px" } },
       "Every group game and the full knockout bracket. Scores fill in automatically as results sync; ",
       "knockout slots resolve to real teams once each round is set. ",
-      el("a", { href: "table.html" }, "Points & prize tables →")),
+      el("a", { href: "index.html" }, "Points & prize tables →")),
     el("p", { class: "small muted", style: { margin: 0 } },
       played
         ? `${played} match${played === 1 ? "" : "es"} played so far.`

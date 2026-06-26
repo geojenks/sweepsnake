@@ -225,8 +225,7 @@ function render() {
     root.append(el("div", { class: "panel" },
       el("h2", {}, "Tables go live after the draft"),
       el("p", { class: "muted small" },
-        "No teams have been drafted yet. Once the snake draft finishes, the league tables appear here. "),
-      el("p", { class: "small" }, el("a", { href: "draft.html" }, "Go to the draft room →"))));
+        "No teams have been drafted yet. Once the draft finishes, the league tables appear here. ")));
     return;
   }
 
