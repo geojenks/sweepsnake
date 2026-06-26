@@ -116,10 +116,10 @@ async function generate(facts) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
       output_config: {
-        effort: "high",
+        effort: "medium",
         format: {
           type: "json_schema",
           schema: {
@@ -141,7 +141,10 @@ async function generate(facts) {
   const json = await res.json();
   if (json.stop_reason === "refusal") throw new Error(`refused: ${JSON.stringify(json.stop_details)}`);
   const textBlock = (json.content || []).find((b) => b.type === "text");
-  if (!textBlock) throw new Error("no text block in response");
+  if (!textBlock) {
+    const kinds = (json.content || []).map((b) => b.type).join(",") || "none";
+    throw new Error(`no text block (stop_reason=${json.stop_reason}, blocks=[${kinds}]) — likely ran out of max_tokens during thinking`);
+  }
   return JSON.parse(textBlock.text);
 }
 
