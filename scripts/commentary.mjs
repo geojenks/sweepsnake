@@ -176,7 +176,9 @@ WHO'S WHO (use for needle and running jokes, but never invent results): the six 
 
 THE SWEEPSTAKE STANDINGS: the data includes a "sweepstakeLeagues" block — the league picture BEFORE tonight ("comingIn") versus AFTER ("now"). There are two kinds of league, both in SWEEPSTAKE points (a different scoring system from the match scoreline — read the note): (a) one overall PLAYER league, which pays the winner £60, ranking the six friends by the summed points of all their teams; (b) eight tiered TEAM-leagues, EACH of which pays its winner £30 (League 1 = every team, usually led by the best side; higher-numbered leagues strip out the top seeds, so they're underdog leagues). EVERY league pays out — nine cash prizes in total. The £60 player league is the headline pot, but the £30 team-leagues are real money too: NEVER call the player league "the only league that pays" or imply the tiered leagues are just for pride. WHEN — AND ONLY WHEN — the night materially moved a table, work it in: a new league leader, an overtake at the top, one friend leapfrogging another in the player league, or someone now within a whisker of top spot. Use the comingIn-vs-now numbers to phrase it as a change ("Geo went into the night third and leaves it top…"). Do NOT recite full tables, do NOT invent positions, and do NOT force a league mention into a night where nothing moved. Never confuse sweepstake points with goals.
 
-CONTINUITY: the data may include "previousDays" — your own recent round-ups, newest first, each with its title, subtitle and a plain-text recap. This is a running serial, not a fresh start each morning. Pick up threads where they fit naturally — a recurring nickname or gag, a team that keeps embarrassing itself, a player on an ongoing charge or collapse, a callback to last night's headline ("a night after [team]'s humiliation…"). Let continuity enrich the piece, but TODAY'S results always lead and fill most of the words; never just rehash yesterday, and never invent a callback that the previousDays don't actually support. If there are no previousDays, simply write a strong standalone opener.
+CONTINUITY: the data may include "previousDays" — your own recent round-ups, newest first; the most recent few carry a full plain-text recap, the older ones just their title and subtitle. This is a running serial, not a fresh start each morning. Pick up threads where they fit naturally — a callback to a recent headline, a team that keeps embarrassing itself, a beat you set up earlier. The data may also include "playerForm": each player's sweepstake points gained per game day and running total across the whole tournament so far. Use it to spot and narrate ARCS where one genuinely exists — a player who haemorrhaged points early and is now clawing back, someone on a real hot streak, a leader in slow decline, a basement-dweller who never recovers. Reference a trajectory only when the numbers actually show one; never recite the form figures. TODAY'S results always lead and fill most of the words; never just rehash yesterday, and never invent a callback or an arc the data doesn't support. If there are no previousDays, simply write a strong standalone opener.
+
+FRESHNESS (important): do NOT reuse a gag, metaphor, simile, image or nickname that already appears in previousDays unless you are deliberately BUILDING on it — escalating a running joke or paying off a setup. A line like "a man arm-wrestling himself" or "a Viking funeral" is spent the moment it's used; describe the same kind of situation a completely different way next time. Keep each title and subtitle distinct from previous ones. And VARY THE REGISTER night to night: the biblical/grandiose mode is one colour, not the whole palette — let some nights open wry, deadpan, breathless, conspiratorial or flatly matter-of-fact instead. Sameness is the enemy.
 
 GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
@@ -232,13 +234,40 @@ const stripHtml = (h) => (h || "")
   .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&quot;/g, '"')
   .replace(/\s+/g, " ").trim();
 
-// the last few round-ups before `key`, newest first — continuity for callbacks/gags
-function recentNarratives(entries, key, n = 3) {
+// Prior round-ups before `key`, newest first: full plain-text recap for the most
+// recent few (callbacks + spotting already-used gags), then title/subtitle only
+// for a longer tail (avoid repeating headlines, allow lighter older callbacks).
+const RECAP_DAYS = 4;
+const HEADLINE_DAYS = 14;
+function recentNarratives(entries, key) {
   return (entries || [])
     .filter((e) => e.day_key < key)
     .sort((a, b) => b.day_key.localeCompare(a.day_key))
-    .slice(0, n)
-    .map((e) => ({ gameDay: e.date_label, title: e.title, subtitle: e.subtitle, recap: stripHtml(e.html) }));
+    .slice(0, HEADLINE_DAYS)
+    .map((e, i) => i < RECAP_DAYS
+      ? { gameDay: e.date_label, title: e.title, subtitle: e.subtitle, recap: stripHtml(e.html) }
+      : { gameDay: e.date_label, title: e.title, subtitle: e.subtitle });
+}
+
+// Each player's sweepstake points gained per game day and running total, across
+// every settled day up to `uptoKey` — a compact trajectory so the writer can
+// narrate arcs (collapses, comebacks, hot streaks) over any span, cheaply.
+const shortDay = (key) => new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/London" }).format(new Date(`${key}T12:00:00Z`));
+function playerForm(allFinished, uptoKey) {
+  const keys = [...new Set(allFinished.map((m) => gameDayKey(m.utc_date)))].filter((k) => k <= uptoKey).sort();
+  const acc = new Map(); // pid -> [{ day, gained, total }]
+  let prev = new Map();
+  for (const k of keys) {
+    const subset = allFinished.filter((m) => gameDayKey(m.utc_date) <= k);
+    const pl = computePlayerLeague(ownerOf, computeStandings(subset.map(toEngineMatch)));
+    const totals = new Map(pl.map((r) => [r.playerId, r.total]));
+    for (const [pid, total] of totals) {
+      if (!acc.has(pid)) acc.set(pid, []);
+      acc.get(pid).push({ day: shortDay(k), gained: total - (prev.get(pid) ?? 0), total });
+    }
+    prev = totals;
+  }
+  return [...acc].map(([pid, byDay]) => ({ player: pidToName(pid), byDay }));
 }
 
 // ---- build the facts payload for one game day ----
@@ -292,7 +321,7 @@ function buildFacts(dayMatches, allFinished, key, priorEntries) {
   const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
   const sweepstakeLeagues = sweepContext(before, after);
 
-  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), matches, groupStanding, sweepstakeLeagues };
+  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), playerForm: playerForm(allFinished, key), matches, groupStanding, sweepstakeLeagues };
 }
 
 // ---- main ----
