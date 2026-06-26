@@ -116,7 +116,7 @@ function sweepContext(before, after) {
   });
 
   return {
-    note: "These are SWEEPSTAKE points, NOT match scorelines: win 3, draw 1, extra-time win 2, shootout win +3 on top of the draw point, +2 per knockout round reached. 'comingIn' = standings BEFORE tonight's games; 'now' = after them. The PLAYER league (the £60 overall pot) ranks each of the six friends by the summed points of all their teams. The tiered TEAM-leagues rank individual teams.",
+    note: "These are SWEEPSTAKE points, NOT match scorelines: win 3, draw 1, extra-time win 2, shootout win +3 on top of the draw point, +2 per knockout round reached. 'comingIn' = standings BEFORE tonight's games; 'now' = after them. The PLAYER league (a £60 prize to the winner) ranks each of the six friends by the summed points of all their teams. The tiered TEAM-leagues rank individual teams; each one pays its winner £30. Every league pays out — nine cash prizes in all.",
     playerLeague,
     teamLeagues,
   };
@@ -174,7 +174,9 @@ THE ONE NON-NEGOTIABLE CRAFT RULE: every result must be played up on TWO levels 
 
 WHO'S WHO (use for needle and running jokes, but never invent results): the six players are Sean, Joe, Geo, Pete, Logan, Barney — and ONLY these six are friends in this group; never imply anyone else is one of them. Joe and Geo, and ONLY Joe and Geo, happen to be brothers in real life — no other player has any relative in this group. Treat the Joe–Geo link as rare, occasional colour, NOT a recurring theme: only reach for it on a night when their teams actually meet head-to-head or go directly toe-to-toe at the top of a table, and even then keep it light — most write-ups should not mention it at all. HARD RULE on the words "brother"/"sibling"/"fratricide"/"Cain"/"Abel": use them ONLY for the Joe-and-Geo pair, never for any other player, never to describe a single player's night on their own (e.g. NOT "a night Logan shared with his sibling"), and never as a stray biblical flourish about unrelated people.
 
-THE SWEEPSTAKE STANDINGS: the data includes a "sweepstakeLeagues" block — the league picture BEFORE tonight ("comingIn") versus AFTER ("now"). There are two kinds of league, both in SWEEPSTAKE points (a different scoring system from the match scoreline — read the note): (a) one overall PLAYER league, the £60 pot, ranking the six friends by the summed points of all their teams; (b) eight tiered TEAM-leagues (League 1 = every team, usually led by the best side; higher-numbered leagues strip out the top seeds, so they're underdog leagues). WHEN — AND ONLY WHEN — the night materially moved a table, work it in: a new league leader, an overtake at the top, one friend leapfrogging another in the player league, or someone now within a whisker of top spot. Use the comingIn-vs-now numbers to phrase it as a change ("Geo went into the night third and leaves it top…"). Do NOT recite full tables, do NOT invent positions, and do NOT force a league mention into a night where nothing moved. Never confuse sweepstake points with goals.
+THE SWEEPSTAKE STANDINGS: the data includes a "sweepstakeLeagues" block — the league picture BEFORE tonight ("comingIn") versus AFTER ("now"). There are two kinds of league, both in SWEEPSTAKE points (a different scoring system from the match scoreline — read the note): (a) one overall PLAYER league, which pays the winner £60, ranking the six friends by the summed points of all their teams; (b) eight tiered TEAM-leagues, EACH of which pays its winner £30 (League 1 = every team, usually led by the best side; higher-numbered leagues strip out the top seeds, so they're underdog leagues). EVERY league pays out — nine cash prizes in total. The £60 player league is the headline pot, but the £30 team-leagues are real money too: NEVER call the player league "the only league that pays" or imply the tiered leagues are just for pride. WHEN — AND ONLY WHEN — the night materially moved a table, work it in: a new league leader, an overtake at the top, one friend leapfrogging another in the player league, or someone now within a whisker of top spot. Use the comingIn-vs-now numbers to phrase it as a change ("Geo went into the night third and leaves it top…"). Do NOT recite full tables, do NOT invent positions, and do NOT force a league mention into a night where nothing moved. Never confuse sweepstake points with goals.
+
+CONTINUITY: the data may include "previousDays" — your own recent round-ups, newest first, each with its title, subtitle and a plain-text recap. This is a running serial, not a fresh start each morning. Pick up threads where they fit naturally — a recurring nickname or gag, a team that keeps embarrassing itself, a player on an ongoing charge or collapse, a callback to last night's headline ("a night after [team]'s humiliation…"). Let continuity enrich the piece, but TODAY'S results always lead and fill most of the words; never just rehash yesterday, and never invent a callback that the previousDays don't actually support. If there are no previousDays, simply write a strong standalone opener.
 
 GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
@@ -224,8 +226,23 @@ async function generate(facts) {
   return JSON.parse(textBlock.text);
 }
 
+// strip tags/entities so prior write-ups can be fed back as plain-text context
+const stripHtml = (h) => (h || "")
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+  .replace(/\s+/g, " ").trim();
+
+// the last few round-ups before `key`, newest first — continuity for callbacks/gags
+function recentNarratives(entries, key, n = 3) {
+  return (entries || [])
+    .filter((e) => e.day_key < key)
+    .sort((a, b) => b.day_key.localeCompare(a.day_key))
+    .slice(0, n)
+    .map((e) => ({ gameDay: e.date_label, title: e.title, subtitle: e.subtitle, recap: stripHtml(e.html) }));
+}
+
 // ---- build the facts payload for one game day ----
-function buildFacts(dayMatches, allFinished, key) {
+function buildFacts(dayMatches, allFinished, key, priorEntries) {
   const desc = (id) => {
     const t = team.get(id) || { name: id, flag: "", group: "?" };
     const o = owner.get(id) || { name: "Unowned", handle: "?", tier: null };
@@ -275,7 +292,7 @@ function buildFacts(dayMatches, allFinished, key) {
   const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
   const sweepstakeLeagues = sweepContext(before, after);
 
-  return { gameDay: dayLabel(key), matches, groupStanding, sweepstakeLeagues };
+  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), matches, groupStanding, sweepstakeLeagues };
 }
 
 // ---- main ----
@@ -301,6 +318,10 @@ for (const m of allMatches) {
 }
 const isReady = (k) => dayMatches.has(k) && !dayBlocking.get(k);
 
+const cmPath = join(ROOT, "data/commentary.json");
+let store = { updated_at: null, entries: [] };
+try { store = JSON.parse(readFileSync(cmPath, "utf8")); } catch {}
+
 // Preview mode: render one closed day to stdout with COMMENTARY_MODEL, WITHOUT
 // touching data/commentary.json — for comparing models/voice before committing.
 //   PREVIEW=1 COMMENTARY_MODEL=claude-sonnet-4-6 node scripts/commentary.mjs
@@ -310,14 +331,10 @@ if (process.env.PREVIEW) {
   if (!key || !dayMatches.has(key)) { console.error("No closed game day to preview."); process.exit(1); }
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
   console.error(`PREVIEW — ${dayLabel(key)} (${dm.length} matches) via ${MODEL}. Not written to file.\n`);
-  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key));
+  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key, store.entries));
   console.log(`# ${title}\n_${subtitle}_\n\n${html}`);
   process.exit(0);
 }
-
-const cmPath = join(ROOT, "data/commentary.json");
-let store = { updated_at: null, entries: [] };
-try { store = JSON.parse(readFileSync(cmPath, "utf8")); } catch {}
 const covered = new Set((store.entries || []).map((e) => e.day_key));
 
 // fully-settled days we haven't written yet, newest first
@@ -335,7 +352,7 @@ if (!todo.length) {
 
 for (const key of todo) {
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
-  const facts = buildFacts(dm, finished, key);
+  const facts = buildFacts(dm, finished, key, store.entries);
   console.log(`Generating ${key} (${dm.length} matches)…`);
   const { title, subtitle, html } = await generate(facts);
   store.entries = (store.entries || []).filter((e) => e.day_key !== key);
