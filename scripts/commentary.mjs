@@ -17,6 +17,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { computeStandings, computeLeagues, computePlayerLeague } from "../js/engine.js";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dir, "..");
@@ -56,6 +57,67 @@ for (const p of draftFile.picks) {
   });
 }
 
+// sweepstake-engine helpers
+const ownerOf = new Map(draftFile.picks.map((p) => [String(p.team_id), p.player_id]));
+const pidName = new Map((draftFile.players || []).map((p) => [p.id, SUBNAMES[normName(p.name)] || p.name]));
+const pidToName = (pid) => pidName.get(pid) || "Unowned";
+const teamsArr = draftFile.picks.map((p) => ({ teamId: String(p.team_id), tier: p.tier }));
+const N_ROUNDS = Number(draftFile.n_rounds) || 8;
+const nameOf = (id) => team.get(id)?.name || id;
+
+const toEngineMatch = (m) => ({
+  id: m.id, stage: m.stage,
+  home: m.home_team_id, away: m.away_team_id,
+  homeScore: m.home_score, awayScore: m.away_score,
+  type: m.match_type || "REGULAR", winner: m.winner,
+  penHome: m.pen_home, penAway: m.pen_away,
+});
+
+// Full sweepstake picture from a set of finished matches.
+function sweepTables(subset) {
+  const standings = computeStandings(subset.map(toEngineMatch));
+  return {
+    leagues: computeLeagues(teamsArr, standings, N_ROUNDS, nameOf),
+    player: computePlayerLeague(ownerOf, standings),
+  };
+}
+
+// What the night changed: player league + the 8 tiered team-leagues, before vs now.
+function sweepContext(before, after) {
+  const b = sweepTables(before);
+  const a = sweepTables(after);
+
+  const bRank = new Map(b.player.map((r, i) => [r.playerId, { rank: i + 1, total: r.total }]));
+  const playerLeague = a.player.map((r, i) => ({
+    player: pidToName(r.playerId),
+    points: r.total,
+    pointsComingIn: bRank.get(r.playerId)?.total ?? 0,
+    gainedTonight: r.total - (bRank.get(r.playerId)?.total ?? 0),
+    rankNow: i + 1,
+    rankComingIn: bRank.get(r.playerId)?.rank ?? null,
+  }));
+
+  const teamLeagues = a.leagues.map((lg) => {
+    const prev = b.leagues.find((x) => x.league === lg.league);
+    return {
+      league: lg.league,
+      blurb: lg.league === 1 ? "the grand league — every team; usually led by the best team"
+            : lg.league === N_ROUNDS ? "underdog league — only the lowest seeds" : "drops the top seeds tier by tier",
+      leaderNow: lg.winnerId ? nameOf(lg.winnerId) : null,
+      leaderNowOwner: lg.winnerId ? pidToName(ownerOf.get(lg.winnerId)) : null,
+      leaderComingIn: prev?.winnerId ? nameOf(prev.winnerId) : null,
+      leaderChanged: (prev?.winnerId || null) !== (lg.winnerId || null),
+      topNow: lg.members.slice(0, 3).map((s) => ({ team: nameOf(s.teamId), owner: pidToName(ownerOf.get(s.teamId)), points: s.total })),
+    };
+  });
+
+  return {
+    note: "These are SWEEPSTAKE points, NOT match scorelines: win 3, draw 1, extra-time win 2, shootout win +3 on top of the draw point, +2 per knockout round reached. 'comingIn' = standings BEFORE tonight's games; 'now' = after them. The PLAYER league (the £60 overall pot) ranks each of the six friends by the summed points of all their teams. The tiered TEAM-leagues rank individual teams.",
+    playerLeague,
+    teamLeagues,
+  };
+}
+
 // ---- game-day bucketing ----
 // London date of (kickoff − 9h): groups a US-evening session under one key and
 // rolls the boundary at 09:00 London.
@@ -84,7 +146,7 @@ function record(matchesForTeam, teamId) {
 
 // ---- Supabase ----
 async function fetchFinished() {
-  const cols = "id,home_team_id,away_team_id,home_score,away_score,winner,match_type,stage,matchday,utc_date,status";
+  const cols = "id,home_team_id,away_team_id,home_score,away_score,winner,match_type,pen_home,pen_away,stage,matchday,utc_date,status";
   const res = await fetch(`${SB_URL}/rest/v1/matches?select=${cols}&status=eq.FINISHED&order=utc_date.asc`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
   });
@@ -99,12 +161,13 @@ THE ONE NON-NEGOTIABLE CRAFT RULE: every result must be played up on TWO levels 
 
 WHO'S WHO (use for needle and running jokes, but never invent results): YOU are Joe — the impresario and author of these round-ups — so you write about yourself in the third person and are free to be self-deprecating or self-aggrandising as the night demands. Joe and Geo are BROTHERS in real life; whenever their teams meet, clash on points, or one prospers at the other's expense, milk the sibling rivalry for everything it's worth.
 
-GROUNDING RULES (critical — you will be given exact data):
-- Use ONLY the scores, teams, owners, groups and standings provided. Never invent a scoreline, a goalscorer, a minute, or a fact not present in the data.
-- The standings provided are real football points (3 for a win, 1 for a draw). Top two of each group qualify directly. A third-placed team MAY still qualify as one of the eight best third-placed teams across the twelve groups — when a team finishes third, treat its fate as an anxious, uncertain wait, never as confirmed in or out, unless told otherwise.
-- Do not state the sweepstake points/league standings unless given them; you may speak qualitatively about whose night it was.
+THE SWEEPSTAKE STANDINGS: the data includes a "sweepstakeLeagues" block — the league picture BEFORE tonight ("comingIn") versus AFTER ("now"). There are two kinds of league, both in SWEEPSTAKE points (a different scoring system from the match scoreline — read the note): (a) one overall PLAYER league, the £60 pot, ranking the six friends by the summed points of all their teams; (b) eight tiered TEAM-leagues (League 1 = every team, usually led by the best side; higher-numbered leagues strip out the top seeds, so they're underdog leagues). WHEN — AND ONLY WHEN — the night materially moved a table, work it in: a new league leader, an overtake at the top, one friend leapfrogging another in the player league, or someone now within a whisker of top spot. Use the comingIn-vs-now numbers to phrase it as a change ("Geo went into the night third and leaves it top…"). Do NOT recite full tables, do NOT invent positions, and do NOT force a league mention into a night where nothing moved. Never confuse sweepstake points with goals.
 
-OUTPUT: return JSON {"title": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The html is a fragment of 350–650 words: a short scene-setting intro paragraph, then the meat (group-by-group or match-by-match), then a sharp closing "reckoning" paragraph naming who came out ahead. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
+GROUNDING RULES (critical — you will be given exact data):
+- Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
+- The "groupStanding" numbers are real football points (3 win / 1 draw) for qualification. Top two of each group qualify directly. A third-placed team MAY still sneak through as one of the eight best third-placed teams — when a team finishes third, treat its fate as an anxious, uncertain wait, never confirmed in or out, unless told otherwise.
+
+OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of 350–650 words: a short scene-setting intro, then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
 
 async function generate(facts) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -124,8 +187,8 @@ async function generate(facts) {
           type: "json_schema",
           schema: {
             type: "object",
-            properties: { title: { type: "string" }, html: { type: "string" } },
-            required: ["title", "html"],
+            properties: { title: { type: "string" }, subtitle: { type: "string" }, html: { type: "string" } },
+            required: ["title", "subtitle", "html"],
             additionalProperties: false,
           },
         },
@@ -194,7 +257,12 @@ function buildFacts(dayMatches, allFinished, key) {
     groupStanding[`Group ${g}`] = rows;
   }
 
-  return { gameDay: dayLabel(key), matches, groupStanding };
+  // sweepstake league movement: before tonight vs after
+  const before = allFinished.filter((m) => gameDayKey(m.utc_date) < key);
+  const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
+  const sweepstakeLeagues = sweepContext(before, after);
+
+  return { gameDay: dayLabel(key), matches, groupStanding, sweepstakeLeagues };
 }
 
 // ---- main ----
@@ -218,8 +286,8 @@ if (process.env.PREVIEW) {
   if (!key || !dayMatches.has(key)) { console.error("No closed game day to preview."); process.exit(1); }
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
   console.error(`PREVIEW — ${dayLabel(key)} (${dm.length} matches) via ${MODEL}. Not written to file.\n`);
-  const { title, html } = await generate(buildFacts(dm, finished, key));
-  console.log(`# ${title}\n\n${html}`);
+  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key));
+  console.log(`# ${title}\n_${subtitle}_\n\n${html}`);
   process.exit(0);
 }
 
@@ -245,12 +313,13 @@ for (const key of todo) {
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
   const facts = buildFacts(dm, finished, key);
   console.log(`Generating ${key} (${dm.length} matches)…`);
-  const { title, html } = await generate(facts);
+  const { title, subtitle, html } = await generate(facts);
   store.entries = (store.entries || []).filter((e) => e.day_key !== key);
   store.entries.push({
     day_key: key,
     date_label: facts.gameDay,
     title,
+    subtitle,
     match_ids: dm.map((m) => m.id),
     html,
     model: MODEL,

@@ -42,7 +42,10 @@ function render(file) {
     const article = el("article", { class: "panel commentary-entry" });
     article.append(
       el("div", { class: "muted small", style: { textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "2px" } }, e.date_label || ""),
-      el("h3", { style: { margin: "0 0 10px" } }, e.title || "Round-up"),
+      el("h3", { style: { margin: "0 0 4px" } }, e.title || "Round-up"),
+      e.subtitle
+        ? el("p", { class: "commentary-subtitle", style: { margin: "0 0 12px", fontStyle: "italic", color: "var(--text-dim)" } }, e.subtitle)
+        : null,
     );
     const body = el("div", { class: "commentary-body" });
     body.innerHTML = e.html || "";
