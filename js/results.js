@@ -92,6 +92,7 @@ function render() {
     // Each group card carries its own fixtures (default).
     root.append(groupSection(groupStage, meta, playerById, dbById, groupStandings, true));
   }
+  root.append(thirdPlaceSection(groupStage, meta, playerById, groupStandings));
   root.append(knockoutSection(knockout, meta, playerById, dbById));
 }
 
@@ -242,6 +243,49 @@ function fixtureRow(f, meta, playerById, dbById, groupTag) {
 const pen = (db) => db.match_type === "PENALTIES" && db.pen_home != null
   ? `Pens ${db.pen_home}–${db.pen_away}` : db.match_type || "";
 
+// ---- Best third-placed teams ----
+// The eight best of the twelve third-placed teams join the Round of 32. Rank them
+// across groups by the FIFA tie-break order (points, then goal difference, then
+// goals for). Provisional until every group is complete.
+function thirdPlaceSection(groupStage, meta, playerById, groupStandings) {
+  const thirds = GROUPS
+    .map((g) => ({ group: g, s: groupRows(g, groupStage, groupStandings, meta)[2] }))
+    .filter((x) => x.s);
+
+  thirds.sort((a, b) =>
+    b.s.total - a.s.total || b.s.gd - a.s.gd || b.s.gf - a.s.gf ||
+    String(meta.get(a.s.teamId)?.name || "").localeCompare(meta.get(b.s.teamId)?.name || ""));
+
+  const body = el("tbody");
+  thirds.forEach((t, i) => {
+    const through = i < 8;
+    const tr = el("tr", {},
+      el("td", { class: "l pos num" }, i + 1),
+      el("td", { class: "l num" }, t.group),
+      el("td", { class: "l" }, el("div", { style: { display: "flex", flexDirection: "column" } },
+        teamCell(t.s.teamId, meta, playerById),
+        ownerMini(t.s.teamId, meta, playerById))),
+      el("td", { class: "num" }, t.s.played),
+      el("td", { class: "num" }, fmtSigned(t.s.gd)),
+      el("td", { class: "total" }, t.s.total));
+    tr.style.opacity = through ? "1" : "0.55";
+    if (i === 7) tr.style.borderBottom = "2px solid var(--gold)"; // qualification cut-off
+    body.append(tr);
+  });
+
+  return el("div", { class: "panel" },
+    el("h2", {}, "Best third-placed teams ",
+      el("span", { class: "muted small" }, "— top 8 reach the Round of 32")),
+    el("p", { class: "muted small", style: { margin: "0 0 10px" } },
+      "Each group's third-placed side, ranked across all twelve groups by points, then goal difference, then goals scored. ",
+      "The eight above the gold line currently qualify. Provisional until the groups finish — and which Round-of-32 tie each one drops into depends on the exact set of groups that supply the eight (see the note under the bracket)."),
+    el("div", { class: "table-scroll", style: { borderRadius: "8px" } },
+      el("table", { class: "board", style: { fontSize: "0.85rem" } },
+        el("thead", {}, el("tr", {}, ["#", "Grp", "Team", "P", "GD", "Pts"].map((h, i) =>
+          el("th", { class: i < 3 ? "l" : "" }, h)))),
+        body)));
+}
+
 // ---- Knockout bracket ----
 function slotLabel(slot) {
   switch (slot.type) {
@@ -266,7 +310,10 @@ function koSide(slot, teamId, meta, playerById) {
 
 function knockoutSection(knockout, meta, playerById, dbById) {
   const wrap = el("div", {},
-    el("h2", { style: { margin: "18px 2px 12px", fontSize: "1.05rem" } }, "Knockout bracket"));
+    el("h2", { style: { margin: "18px 2px 4px", fontSize: "1.05rem" } }, "Knockout bracket"),
+    el("p", { class: "muted small", style: { margin: "0 2px 12px", maxWidth: "640px" } },
+      "A “3rd C/E/F/H/I”-style slot lists the groups it can be filled from. The eight qualifying third-placed teams are mapped onto these slots by FIFA's fixed assignment table, which keys off ",
+      el("em", {}, "which"), " eight of the twelve groups they come from — so the exact Round-of-32 pairings can't be known until all twelve groups are complete."));
 
   for (const [stage, title] of KO_ROUNDS) {
     const matches = knockout.filter((m) => m.stage === stage).sort((a, b) => a.matchNo - b.matchNo);
