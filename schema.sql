@@ -60,6 +60,8 @@ create table if not exists matches (
   away_team_id  text references teams(id),
   home_score    integer,           -- in-play score (90 or 120 min); never shootout
   away_score    integer,
+  half_time_home integer,          -- score at the break (nullable; populated by sync)
+  half_time_away integer,
   match_type    text check (match_type in ('REGULAR','EXTRA_TIME','PENALTIES')),
   winner        text check (winner in ('HOME','AWAY','DRAW')),
   pen_home      integer,           -- shootout score (PENALTIES only)
@@ -71,6 +73,11 @@ create table if not exists matches (
   is_overridden boolean default false,
   last_synced   timestamptz default now()
 );
+
+-- Half-time columns were added after the initial schema. Safe to run on an
+-- existing matches table (no-op if they already exist).
+alter table matches add column if not exists half_time_home integer;
+alter table matches add column if not exists half_time_away integer;
 
 -- ---------------------------------------------------------------------------
 -- Row-Level Security: open to the anon key (see security note above)

@@ -72,6 +72,8 @@ async function main() {
       away_team_id: m.awayTeam?.id != null ? String(m.awayTeam.id) : null,
       home_score: finished ? s.fullTime?.home ?? null : null,
       away_score: finished ? s.fullTime?.away ?? null : null,
+      half_time_home: finished ? s.halfTime?.home ?? null : null,
+      half_time_away: finished ? s.halfTime?.away ?? null : null,
       match_type: finished ? matchType(s.duration) : null,
       winner: finished ? WINNER[s.winner] ?? null : null,
       pen_home: s.penalties?.home ?? null,
@@ -85,10 +87,30 @@ async function main() {
   }
 
   // Upsert in chunks (PostgREST handles arrays fine, but keep requests modest).
+  // If the half-time columns aren't in the DB yet (migration not run), PostgREST
+  // 400s on the unknown column — detect that once and retry without them, so a
+  // pending migration can never brick the sync. Run the ALTER in schema.sql to
+  // start persisting half-time scores.
+  let stripHt = false;
+  const upsert = async (chunk) => {
+    const body = stripHt
+      ? chunk.map(({ half_time_home, half_time_away, ...rest }) => rest)
+      : chunk;
+    try {
+      await sbRequest("POST", "/matches", body,
+        { Prefer: "resolution=merge-duplicates,return=minimal" });
+    } catch (e) {
+      if (!stripHt && /half_time/.test(String(e.message))) {
+        console.warn("matches.half_time_* columns missing — run the ALTER in schema.sql. Syncing without half-time for now.");
+        stripHt = true;
+        return upsert(chunk);
+      }
+      throw e;
+    }
+  };
   const CHUNK = 200;
   for (let i = 0; i < rows.length; i += CHUNK) {
-    await sbRequest("POST", "/matches", rows.slice(i, i + CHUNK),
-      { Prefer: "resolution=merge-duplicates,return=minimal" });
+    await upsert(rows.slice(i, i + CHUNK));
   }
   const fin = rows.filter((r) => r.status === "FINISHED").length;
   console.log(`Synced ${rows.length} matches (${fin} finished, ${skip.size} overridden left untouched).`);

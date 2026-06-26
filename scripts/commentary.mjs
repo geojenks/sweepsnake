@@ -152,18 +152,50 @@ function record(matchesForTeam, teamId) {
 // Fetch ALL matches (every status) so we can tell when a game-day bucket is fully
 // settled, not just the finished ones.
 async function fetchMatches() {
-  const cols = "id,home_team_id,away_team_id,home_score,away_score,winner,match_type,pen_home,pen_away,stage,matchday,utc_date,status";
-  const res = await fetch(`${SB_URL}/rest/v1/matches?select=${cols}&order=utc_date.asc`, {
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
-  });
-  if (!res.ok) { console.error("Supabase error:", await res.text()); process.exit(1); }
-  return res.json();
+  const base = "id,home_team_id,away_team_id,home_score,away_score,winner,match_type,pen_home,pen_away,stage,matchday,utc_date,status";
+  // half_time_* may not exist yet (migration pending) — fall back without them.
+  for (const cols of [`${base},half_time_home,half_time_away`, base]) {
+    const res = await fetch(`${SB_URL}/rest/v1/matches?select=${cols}&order=utc_date.asc`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    });
+    if (res.ok) return res.json();
+    const text = await res.text();
+    if (/half_time/.test(text)) continue; // retry without half-time columns
+    console.error("Supabase error:", text); process.exit(1);
+  }
 }
 
 // A match counts as DONE (result locked in) or as BLOCKING (the bucket can't be
 // written until it resolves). Postponed/cancelled/suspended games block nothing.
 const DONE_STATUS = new Set(["FINISHED", "AWARDED"]);
 const BLOCKING_STATUS = new Set(["SCHEDULED", "TIMED", "IN_PLAY", "PAUSED"]);
+
+// ---- BBC headlines (rare real-world flavour) ----
+// A handful of current headlines the writer MAY — sparingly — riff on when one is
+// genuinely huge or deliciously absurd (see the prompt's high bar). Non-fatal:
+// returns [] on any error, and is only fetched when we're actually generating.
+const decodeXml = (s) => s
+  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').trim();
+async function fetchBigNews() {
+  const feeds = [
+    ["top", "https://feeds.bbci.co.uk/news/rss.xml"],
+    ["showbiz", "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"],
+  ];
+  const out = [];
+  for (const [section, url] of feeds) {
+    try {
+      const res = await fetch(url, { headers: { "user-agent": "sweepsnake-commentary/1.0" } });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      for (const it of xml.split(/<item>/).slice(1, 11)) {
+        const m = it.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+        if (m) out.push({ section, headline: decodeXml(m[1]) });
+      }
+    } catch { /* news is optional flavour — ignore failures */ }
+  }
+  return out.slice(0, 16);
+}
 
 // ---- Anthropic ----
 const SYSTEM = `You are the resident pundit for a private World Cup 2026 sweepstake among six friends. You write a daily commentator round-up in the voice of the long-running "LPS" (Last Person Standing) emails — a style made famous by Joe, one of the six: long, dramatic, gleefully overwrought sentences; mock-grandiose; biblical and literary asides; stadium-name and pop-culture gags; affectionate but savage roasting of the players; near-fatal-heart-attack hyperbole; British spelling; the occasional well-placed swear word (this is a private group — no sanitising).
@@ -180,10 +212,13 @@ CONTINUITY: the data may include "previousDays" — your own recent round-ups, n
 
 FRESHNESS (important): do NOT reuse a gag, metaphor, simile, image or nickname that already appears in previousDays unless you are deliberately BUILDING on it — escalating a running joke or paying off a setup. A line like "a man arm-wrestling himself" or "a Viking funeral" is spent the moment it's used; describe the same kind of situation a completely different way next time. Keep each title and subtitle distinct from previous ones. And VARY THE REGISTER night to night: the biblical/grandiose mode is one colour, not the whole palette — let some nights open wry, deadpan, breathless, conspiratorial or flatly matter-of-fact instead. Sameness is the enemy.
 
+REAL-WORLD NEWS (use almost never): the data may include "bigNews" — a few current BBC headlines. The bar for touching any of it is VERY high, and silence is the default — on the large majority of nights you mention NO news at all. Reach for an item ONLY when it is either (a) genuinely enormous news essentially everyone will have heard of (a Prime Minister resigning, a major geopolitical flashpoint), or (b) a pop-culture item so famous or absurd that simply colliding it with the football is funny (a celebrity scandal, a viral TV moment) — bonus points if the item is itself about football or football broadcasting. When you do use one, it is a single light aside or a title pun, worn lightly, never the backbone of the write-up. HARD SAFETY LIMITS: never joke about death, injury, illness, disaster, war casualties, crime victims or anyone's real suffering — skip any such headline completely; if in doubt, leave it out. One sanctioned running gag: Joe's gamertag is "StraitOfHorMousaDembele" (the Strait of Hormuz + the footballer Mousa Dembélé), so any genuine news about the Strait of Hormuz being blocked/closed is a gift to point straight at Joe.
+
 GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
 - The "groupStanding" numbers are real football points (3 win / 1 draw) for qualification. Top two of each group qualify directly. A third-placed team MAY still sneak through as one of the eight best third-placed teams — when a team finishes third, treat its fate as an anxious, uncertain wait, never confirmed in or out, unless told otherwise.
-- "concurrentGames" lists sets of same-group matches that kicked off at the SAME moment (the simultaneous final round). Their results unfolded together and fed off each other — a goal in one swinging qualification in the other, two sides effectively racing. Where it genuinely mattered, dramatise that live interplay; don't force it when the games were dead rubbers. (You only have final scores, not minute-by-minute, so describe the interaction in terms of outcomes, never invent specific goal times or in-game momentum swings.)
+- "concurrentGames" lists sets of same-group matches that kicked off at the SAME moment (the simultaneous final round). Their results unfolded together and fed off each other — a goal in one swinging qualification in the other, two sides effectively racing. Where it genuinely mattered, dramatise that live interplay; don't force it when the games were dead rubbers.
+- A match may carry a "halfTimeScore" (the score at the break) alongside the full-time "score". Mine the gap between them for drama: a half-time lead thrown away, a goalless first half that burst open, a deficit overturned after the break, a game killed off early then coasted. But half-time-vs-full-time is the ONLY in-game detail you have — you do NOT have goal minutes, scorers, red cards, penalty misses, substitutions or momentum data. Never invent any of those, and never imply a specific moment beyond what the half-time and full-time scores actually reveal.
 
 OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of 350–650 words: a short scene-setting intro, then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
 
@@ -272,7 +307,7 @@ function playerForm(allFinished, uptoKey) {
 }
 
 // ---- build the facts payload for one game day ----
-function buildFacts(dayMatches, allFinished, key, priorEntries) {
+function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
   const desc = (id) => {
     const t = team.get(id) || { name: id, flag: "", group: "?" };
     const o = owner.get(id) || { name: "Unowned", handle: "?", tier: null };
@@ -283,6 +318,7 @@ function buildFacts(dayMatches, allFinished, key, priorEntries) {
     home: desc(m.home_team_id),
     away: desc(m.away_team_id),
     score: `${m.home_score}-${m.away_score}`,
+    halfTimeScore: (m.half_time_home != null && m.half_time_away != null) ? `${m.half_time_home}-${m.half_time_away}` : null,
     result: m.winner === "DRAW" ? "draw" : (m.winner === "HOME" ? `${team.get(m.home_team_id)?.name} won` : `${team.get(m.away_team_id)?.name} won`),
     settledBy: m.match_type === "PENALTIES" ? "penalty shootout" : (m.match_type === "EXTRA_TIME" ? "extra time" : "90 minutes"),
     stage: m.stage,
@@ -334,7 +370,13 @@ function buildFacts(dayMatches, allFinished, key, priorEntries) {
   const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
   const sweepstakeLeagues = sweepContext(before, after);
 
-  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), playerForm: playerForm(allFinished, key), matches, concurrentGames, groupStanding, sweepstakeLeagues };
+  return {
+    gameDay: dayLabel(key),
+    previousDays: recentNarratives(priorEntries, key),
+    playerForm: playerForm(allFinished, key),
+    matches, concurrentGames, groupStanding, sweepstakeLeagues,
+    ...(bigNews?.length ? { bigNews } : {}),
+  };
 }
 
 // ---- main ----
@@ -373,7 +415,8 @@ if (process.env.PREVIEW) {
   if (!key || !dayMatches.has(key)) { console.error("No closed game day to preview."); process.exit(1); }
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
   console.error(`PREVIEW — ${dayLabel(key)} (${dm.length} matches) via ${MODEL}. Not written to file.\n`);
-  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key, store.entries));
+  const bigNews = await fetchBigNews();
+  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key, store.entries, bigNews));
   console.log(`# ${title}\n_${subtitle}_\n\n${html}`);
   process.exit(0);
 }
@@ -392,9 +435,13 @@ if (!todo.length) {
   process.exit(0);
 }
 
+// Fetch news once, only now that we know we're generating. Skip during backfill —
+// today's headlines would be anachronistic on an old game day.
+const bigNews = process.env.DAYS === "all" ? [] : await fetchBigNews();
+
 for (const key of todo) {
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
-  const facts = buildFacts(dm, finished, key, store.entries);
+  const facts = buildFacts(dm, finished, key, store.entries, bigNews);
   console.log(`Generating ${key} (${dm.length} matches)…`);
   const { title, subtitle, html } = await generate(facts);
   store.entries = (store.entries || []).filter((e) => e.day_key !== key);
