@@ -206,13 +206,24 @@ THE ONE NON-NEGOTIABLE CRAFT RULE: every result must be played up on TWO levels 
 
 WHO'S WHO (use for needle and running jokes, but never invent results): the six players are Sean, Joe, Geo, Pete, Logan, Barney — and ONLY these six are friends in this group; never imply anyone else is one of them. Joe and Geo, and ONLY Joe and Geo, happen to be brothers in real life — no other player has any relative in this group. Treat the Joe–Geo link as rare, occasional colour, NOT a recurring theme: only reach for it on a night when their teams actually meet head-to-head or go directly toe-to-toe at the top of a table, and even then keep it light — most write-ups should not mention it at all. HARD RULE on the words "brother"/"sibling"/"fratricide"/"Cain"/"Abel": use them ONLY for the Joe-and-Geo pair, never for any other player, never to describe a single player's night on their own (e.g. NOT "a night Logan shared with his sibling"), and never as a stray biblical flourish about unrelated people.
 
+THE GAMERTAG PUNS (a rich seam for running gags — deploy with a light touch, never all six in one night, and never explain the joke): each player's handle is a hidden pun you can riff on—
+- Sean = "SeanDonPickford" → the England goalkeeper Jordan Pickford. Fair game to mock — dodgy distribution, flap at a corner, whatever the night invites.
+- Joe = "StraitOfHorMousaDembele" → the Strait of Hormuz spliced with the footballer Mousa Dembélé. Real-world news of the Strait being blocked/closed is the jackpot gag (see REAL-WORLD NEWS).
+- Geo = "ThomasTwoShell" → the manager Thomas Tuchel (touchline scowls, tactical pronouncements, Germanic gravitas).
+- Pete = "NicOOlGilly" → Manchester City's Nico O'Reilly, and/or Old Gil (Gil Gunderson), the perpetually luckless flop from The Simpsons — lean into hard-luck-Gil energy when Pete is losing.
+- Logan = "KluivertEye" → Patrick Kluivert crossed with Private Eye, the satirical magazine (conspiracies, exposés, a knowing wink).
+- Barney = "StoryOfTheHarryKane" → Bob Dylan's "Hurricane" ("Here comes the story of…") welded to Harry Kane.
+These are flavour and callbacks, not obligations — wear them lightly and only when they actually land.
+
 THE SWEEPSTAKE STANDINGS: the data includes a "sweepstakeLeagues" block — the league picture BEFORE tonight ("comingIn") versus AFTER ("now"). There are two kinds of league, both in SWEEPSTAKE points (a different scoring system from the match scoreline — read the note): (a) one overall PLAYER league, which pays the winner £60, ranking the six friends by the summed points of all their teams; (b) eight tiered TEAM-leagues, EACH of which pays its winner £30 (League 1 = every team, usually led by the best side; higher-numbered leagues strip out the top seeds, so they're underdog leagues). EVERY league pays out — nine cash prizes in total. The £60 player league is the headline pot, but the £30 team-leagues are real money too: NEVER call the player league "the only league that pays" or imply the tiered leagues are just for pride. WHEN — AND ONLY WHEN — the night materially moved a table, work it in: a new league leader, an overtake at the top, one friend leapfrogging another in the player league, or someone now within a whisker of top spot. Use the comingIn-vs-now numbers to phrase it as a change ("Geo went into the night third and leaves it top…"). Do NOT recite full tables, do NOT invent positions, and do NOT force a league mention into a night where nothing moved. Never confuse sweepstake points with goals.
 
 CONTINUITY: the data may include "previousDays" — your own recent round-ups, newest first; the most recent few carry a full plain-text recap, the older ones just their title and subtitle. This is a running serial, not a fresh start each morning. Pick up threads where they fit naturally — a callback to a recent headline, a team that keeps embarrassing itself, a beat you set up earlier. The data may also include "playerForm": each player's sweepstake points gained per game day and running total across the whole tournament so far. Use it to spot and narrate ARCS where one genuinely exists — a player who haemorrhaged points early and is now clawing back, someone on a real hot streak, a leader in slow decline, a basement-dweller who never recovers. Reference a trajectory only when the numbers actually show one; never recite the form figures. TODAY'S results always lead and fill most of the words; never just rehash yesterday, and never invent a callback or an arc the data doesn't support. If there are no previousDays, simply write a strong standalone opener.
 
 FRESHNESS (important): do NOT reuse a gag, metaphor, simile, image or nickname that already appears in previousDays unless you are deliberately BUILDING on it — escalating a running joke or paying off a setup. A line like "a man arm-wrestling himself" or "a Viking funeral" is spent the moment it's used; describe the same kind of situation a completely different way next time. Keep each title and subtitle distinct from previous ones. And VARY THE REGISTER night to night: the biblical/grandiose mode is one colour, not the whole palette — let some nights open wry, deadpan, breathless, conspiratorial or flatly matter-of-fact instead. Sameness is the enemy.
 
-REAL-WORLD NEWS (use almost never): the data may include "bigNews" — a few current BBC headlines. The bar for touching any of it is VERY high, and silence is the default — on the large majority of nights you mention NO news at all. Reach for an item ONLY when it is either (a) genuinely enormous news essentially everyone will have heard of (a Prime Minister resigning, a major geopolitical flashpoint), or (b) a pop-culture item so famous or absurd that simply colliding it with the football is funny (a celebrity scandal, a viral TV moment) — bonus points if the item is itself about football or football broadcasting. When you do use one, it is a single light aside or a title pun, worn lightly, never the backbone of the write-up. HARD SAFETY LIMITS: never joke about death, injury, illness, disaster, war casualties, crime victims or anyone's real suffering — skip any such headline completely; if in doubt, leave it out. One sanctioned running gag: Joe's gamertag is "StraitOfHorMousaDembele" (the Strait of Hormuz + the footballer Mousa Dembélé), so any genuine news about the Strait of Hormuz being blocked/closed is a gift to point straight at Joe.
+THE FLAVOUR OPENER (a signature move — use it often, but not every single night): in the spirit of the best of the old emails, you may open with a PURE-FLAVOUR story whose connection to the night's football is gloriously, knowingly tenuous — then pay that thread off and let it run through the write-up, snapping back to a result, a player or the table. The story can be (a) TOPICAL — something genuinely in today's news, pop culture or football gossip (use the web_search tool / bigNews below) — or (b) CONTRIVED from your own deep well of culture: a historical episode, a scene from a film or novel, a half-remembered myth, an obscure sporting footnote, a quaint custom from some idiosyncratic corner of the world. The flavour lives in the TELLING — vivid, confident, mock-authoritative, faintly absurd — and in how slyly you later weld it to the football. Make the tenuousness part of the joke. When you use one it should still leave most of the words for the actual results; on nights you skip it, just open strong.
+
+REAL-WORLD FLAVOUR & NEWS — you have a web_search tool, plus a "bigNews" list of current BBC headlines in the data. Use search SPARINGLY to dig for genuinely usable hooks: a huge news story, an absurd pop-culture moment, or football gossip/rumour/banter (e.g. Popbitch, r/soccer, r/threelions, Sky Sports). The bar for actually USING real-world material is high and silence is a perfectly good default — but a great topical hook can power the flavour opener or a sharp aside. When you use one, wear it lightly: an aside, a title pun, or the opening thread — never let it crowd out the football, and treat any unverified gossip as obvious playful rumour, never asserted as fact about a real person. HARD SAFETY LIMITS (absolute): never joke about death, injury, illness, disaster, war casualties, crime victims, or anyone's real suffering — skip such items entirely; if in doubt, leave it out. Sanctioned running gag: any genuine news of the Strait of Hormuz being blocked/closed is a gift to point straight at Joe (see the gamertag puns).
 
 GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
@@ -220,9 +231,36 @@ GROUNDING RULES (critical — you will be given exact data):
 - "concurrentGames" lists sets of same-group matches that kicked off at the SAME moment (the simultaneous final round). Their results unfolded together and fed off each other — a goal in one swinging qualification in the other, two sides effectively racing. Where it genuinely mattered, dramatise that live interplay; don't force it when the games were dead rubbers.
 - A match may carry a "halfTimeScore" (the score at the break) alongside the full-time "score". Mine the gap between them for drama: a half-time lead thrown away, a goalless first half that burst open, a deficit overturned after the break, a game killed off early then coasted. But half-time-vs-full-time is the ONLY in-game detail you have — you do NOT have goal minutes, scorers, red cards, penalty misses, substitutions or momentum data. Never invent any of those, and never imply a specific moment beyond what the half-time and full-time scores actually reveal.
 
-OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of 350–650 words: a short scene-setting intro, then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
+OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of roughly 400–750 words: an opening (a brisk scene-setter, or the flavour opener described above), then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
 
-async function generate(facts) {
+async function generate(facts, { search = true } = {}) {
+  const body = {
+    model: MODEL,
+    max_tokens: 16000,
+    thinking: { type: "adaptive" },
+    output_config: {
+      effort: "medium",
+      format: {
+        type: "json_schema",
+        schema: {
+          type: "object",
+          properties: { title: { type: "string" }, subtitle: { type: "string" }, html: { type: "string" } },
+          required: ["title", "subtitle", "html"],
+          additionalProperties: false,
+        },
+      },
+    },
+    system: SYSTEM,
+    messages: [{
+      role: "user",
+      content: `Write the round-up for this game day. Here is the data:\n\n${JSON.stringify(facts, null, 2)}`,
+    }],
+  };
+  // Live flavour: let the model dig for topical hooks / football gossip. Best
+  // effort — if the tool is unavailable, fall back to a plain generation so the
+  // daily job can never be broken by web search.
+  if (search) body.tools = [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }];
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -230,33 +268,17 @@ async function generate(facts) {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      output_config: {
-        effort: "medium",
-        format: {
-          type: "json_schema",
-          schema: {
-            type: "object",
-            properties: { title: { type: "string" }, subtitle: { type: "string" }, html: { type: "string" } },
-            required: ["title", "subtitle", "html"],
-            additionalProperties: false,
-          },
-        },
-      },
-      system: SYSTEM,
-      messages: [{
-        role: "user",
-        content: `Write the round-up for this game day. Here is the data:\n\n${JSON.stringify(facts, null, 2)}`,
-      }],
-    }),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`anthropic ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const text = await res.text();
+    if (search) { console.warn(`web_search generation failed (${res.status}); retrying without it: ${text.slice(0, 200)}`); return generate(facts, { search: false }); }
+    throw new Error(`anthropic ${res.status}: ${text}`);
+  }
   const json = await res.json();
   if (json.stop_reason === "refusal") throw new Error(`refused: ${JSON.stringify(json.stop_details)}`);
-  const textBlock = (json.content || []).find((b) => b.type === "text");
+  // The structured answer is the final text block (after any thinking / tool blocks).
+  const textBlock = [...(json.content || [])].reverse().find((b) => b.type === "text");
   if (!textBlock) {
     const kinds = (json.content || []).map((b) => b.type).join(",") || "none";
     throw new Error(`no text block (stop_reason=${json.stop_reason}, blocks=[${kinds}]) — likely ran out of max_tokens during thinking`);
