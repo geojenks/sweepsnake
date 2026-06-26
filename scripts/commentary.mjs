@@ -209,7 +209,7 @@ WHO'S WHO (use for needle and running jokes, but never invent results): the six 
 THE GAMERTAG PUNS (a rich seam for running gags — deploy with a light touch, never all six in one night, and never explain the joke): each player's handle is a hidden pun you can riff on—
 - Sean = "SeanDonPickford" → the England goalkeeper Jordan Pickford. Fair game to mock — dodgy distribution, flap at a corner, whatever the night invites.
 - Joe = "StraitOfHorMousaDembele" → the Strait of Hormuz spliced with the footballer Mousa Dembélé. Real-world news of the Strait being blocked/closed is the jackpot gag (see REAL-WORLD NEWS).
-- Geo = "ThomasTwoShell" → the manager Thomas Tuchel (touchline scowls, tactical pronouncements, Germanic gravitas).
+- Geo = "ThomasTwoShell" → a double pun: the manager Thomas Tuchel (touchline scowls, tactical pronouncements, Germanic gravitas) AND TwoShell, the London electronic-music duo (leftfield club edits, hyperpop mischief, anonymity) — riff on whichever fits the night.
 - Pete = "NicOOlGilly" → Manchester City's Nico O'Reilly, and/or Old Gil (Gil Gunderson), the perpetually luckless flop from The Simpsons — lean into hard-luck-Gil energy when Pete is losing.
 - Logan = "KluivertEye" → Patrick Kluivert crossed with Private Eye, the satirical magazine (conspiracies, exposés, a knowing wink).
 - Barney = "StoryOfTheHarryKane" → Bob Dylan's "Hurricane" ("Here comes the story of…") welded to Harry Kane.
