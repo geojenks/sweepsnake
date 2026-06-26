@@ -183,6 +183,7 @@ FRESHNESS (important): do NOT reuse a gag, metaphor, simile, image or nickname t
 GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
 - The "groupStanding" numbers are real football points (3 win / 1 draw) for qualification. Top two of each group qualify directly. A third-placed team MAY still sneak through as one of the eight best third-placed teams — when a team finishes third, treat its fate as an anxious, uncertain wait, never confirmed in or out, unless told otherwise.
+- "concurrentGames" lists sets of same-group matches that kicked off at the SAME moment (the simultaneous final round). Their results unfolded together and fed off each other — a goal in one swinging qualification in the other, two sides effectively racing. Where it genuinely mattered, dramatise that live interplay; don't force it when the games were dead rubbers. (You only have final scores, not minute-by-minute, so describe the interaction in terms of outcomes, never invent specific goal times or in-game momentum swings.)
 
 OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of 350–650 words: a short scene-setting intro, then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
 
@@ -289,6 +290,18 @@ function buildFacts(dayMatches, allFinished, key, priorEntries) {
     kickoffBST: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London" }).format(new Date(m.utc_date)) + " BST",
   }));
 
+  // Same-group games that kicked off at the SAME time — their results played out
+  // simultaneously and interacted live (a goal in one swinging the other's fate).
+  const kickGroups = new Map(); // `${group}@${utc}` -> ["Team v Team", ...]
+  for (const m of dayMatches) {
+    if (m.stage !== "GROUP_STAGE") continue;
+    const g = team.get(m.home_team_id)?.group;
+    const k = `${g}@${m.utc_date}`;
+    if (!kickGroups.has(k)) kickGroups.set(k, []);
+    kickGroups.get(k).push(`${nameOf(m.home_team_id)} v ${nameOf(m.away_team_id)}`);
+  }
+  const concurrentGames = [...kickGroups.values()].filter((s) => s.length > 1);
+
   // standings for every group that featured today (group-stage only)
   const groupsToday = new Set();
   for (const m of dayMatches) {
@@ -321,7 +334,7 @@ function buildFacts(dayMatches, allFinished, key, priorEntries) {
   const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
   const sweepstakeLeagues = sweepContext(before, after);
 
-  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), playerForm: playerForm(allFinished, key), matches, groupStanding, sweepstakeLeagues };
+  return { gameDay: dayLabel(key), previousDays: recentNarratives(priorEntries, key), playerForm: playerForm(allFinished, key), matches, concurrentGames, groupStanding, sweepstakeLeagues };
 }
 
 // ---- main ----
