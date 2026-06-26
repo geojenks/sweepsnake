@@ -5,8 +5,12 @@
 // A "game day" is a US-night session, not a UK calendar day: World Cup 2026
 // kicks off run ~20:00–07:00 UK, so a day's results "complete" around breakfast.
 // We bucket every match by the London date of (kickoff − 9h), so an overnight
-// session (e.g. 21:00 BST → 03:00 BST) lands under a single key, and only
-// generate for days that have fully closed (key < today's key).
+// session (e.g. 21:00 BST → 03:00 BST) lands under a single key.
+//
+// We don't write a day on a fixed clock — we POLL. A day is "ready" the moment
+// every fixture in its bucket has actually finished (none still SCHEDULED / live).
+// The workflow runs this every half-hour through the morning; the first poll
+// after the night's last whistle writes it, the rest are cheap no-ops.
 //
 // The witty prose is written by Claude (claude-opus-4-8) — it can't be templated.
 // Required secret: ANTHROPIC_API_KEY.
@@ -145,14 +149,21 @@ function record(matchesForTeam, teamId) {
 }
 
 // ---- Supabase ----
-async function fetchFinished() {
+// Fetch ALL matches (every status) so we can tell when a game-day bucket is fully
+// settled, not just the finished ones.
+async function fetchMatches() {
   const cols = "id,home_team_id,away_team_id,home_score,away_score,winner,match_type,pen_home,pen_away,stage,matchday,utc_date,status";
-  const res = await fetch(`${SB_URL}/rest/v1/matches?select=${cols}&status=eq.FINISHED&order=utc_date.asc`, {
+  const res = await fetch(`${SB_URL}/rest/v1/matches?select=${cols}&order=utc_date.asc`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
   });
   if (!res.ok) { console.error("Supabase error:", await res.text()); process.exit(1); }
   return res.json();
 }
+
+// A match counts as DONE (result locked in) or as BLOCKING (the bucket can't be
+// written until it resolves). Postponed/cancelled/suspended games block nothing.
+const DONE_STATUS = new Set(["FINISHED", "AWARDED"]);
+const BLOCKING_STATUS = new Set(["SCHEDULED", "TIMED", "IN_PLAY", "PAUSED"]);
 
 // ---- Anthropic ----
 const SYSTEM = `You are Joe, the impresario behind a private World Cup 2026 sweepstake among six friends. You write a daily pundit/commentator round-up in the voice of the long-running "LPS" (Last Person Standing) emails: long, dramatic, gleefully overwrought sentences; mock-grandiose; biblical and literary asides; stadium-name and pop-culture gags; affectionate but savage roasting of your mates; near-fatal-heart-attack hyperbole; British spelling; the occasional well-placed swear word (this is a private group — full Joe, no sanitising).
@@ -266,8 +277,10 @@ function buildFacts(dayMatches, allFinished, key) {
 }
 
 // ---- main ----
-const finished = await fetchFinished();
-const dayMatches = new Map(); // key -> matches[]
+const allMatches = await fetchMatches();
+const finished = allMatches.filter((m) => DONE_STATUS.has(m.status));
+
+const dayMatches = new Map(); // key -> finished matches[]
 for (const m of finished) {
   if (!m.home_team_id || !m.away_team_id || !m.utc_date) continue;
   const k = gameDayKey(m.utc_date);
@@ -275,13 +288,22 @@ for (const m of finished) {
   dayMatches.get(k).push(m);
 }
 
-const todayKey = gameDayKey(new Date().toISOString());
+// Per game-day bucket: how many fixtures are settled vs still pending/live. A day
+// is "ready" to write once it has at least one result and nothing left to play.
+const dayBlocking = new Map(); // key -> count of unresolved fixtures
+for (const m of allMatches) {
+  if (!m.home_team_id || !m.away_team_id || !m.utc_date) continue;
+  if (!BLOCKING_STATUS.has(m.status)) continue;
+  const k = gameDayKey(m.utc_date);
+  dayBlocking.set(k, (dayBlocking.get(k) || 0) + 1);
+}
+const isReady = (k) => dayMatches.has(k) && !dayBlocking.get(k);
 
 // Preview mode: render one closed day to stdout with COMMENTARY_MODEL, WITHOUT
 // touching data/commentary.json — for comparing models/voice before committing.
 //   PREVIEW=1 COMMENTARY_MODEL=claude-sonnet-4-6 node scripts/commentary.mjs
 if (process.env.PREVIEW) {
-  const closed = [...dayMatches.keys()].filter((k) => k < todayKey).sort();
+  const closed = [...dayMatches.keys()].filter(isReady).sort();
   const key = process.env.PREVIEW_DAY || closed[closed.length - 1];
   if (!key || !dayMatches.has(key)) { console.error("No closed game day to preview."); process.exit(1); }
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
@@ -296,16 +318,16 @@ let store = { updated_at: null, entries: [] };
 try { store = JSON.parse(readFileSync(cmPath, "utf8")); } catch {}
 const covered = new Set((store.entries || []).map((e) => e.day_key));
 
-// closed days (key strictly before today) that we haven't written yet, newest first
+// fully-settled days we haven't written yet, newest first
 const candidates = [...dayMatches.keys()]
-  .filter((k) => k < todayKey && !covered.has(k))
+  .filter((k) => isReady(k) && !covered.has(k))
   .sort()
   .reverse();
 
 const todo = process.env.DAYS === "all" ? candidates.slice().reverse() : candidates.slice(0, 1);
 
 if (!todo.length) {
-  console.log("No new closed game day to write up — nothing to do.");
+  console.log("No fully-settled new game day to write up — nothing to do.");
   process.exit(0);
 }
 

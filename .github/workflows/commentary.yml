@@ -1,11 +1,14 @@
 name: Daily commentary
 
-# Each morning, refresh results then write up the last completed game day in the
-# LPS pundit voice (via the Claude API) and commit it to data/commentary.json,
-# which commentary.html reads at runtime.
+# Through the morning, refresh results and — as soon as a game-day's last fixture
+# has finished — write it up in the LPS pundit voice (via the Claude API) and commit
+# it to data/commentary.json, which commentary.html reads at runtime. The generator
+# only writes once a day is fully settled, so the extra polls are cheap no-ops.
 on:
   schedule:
-    - cron: "0 9 * * *"    # 09:00 UTC = 10:00 BST — after the overnight US games are in
+    # Every 30 min, 04:00–09:30 UTC (05:00–10:30 BST) — covers the tail of the
+    # overnight US games through breakfast; the first poll after the last whistle wins.
+    - cron: "*/30 4-9 * * *"
   workflow_dispatch:        # manual trigger from the Actions tab
     inputs:
       days:
