@@ -51,7 +51,10 @@ async function sbRequest(method, path, body, extraHeaders = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`supabase ${method} ${path} -> ${res.status} ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
+  // return=minimal upserts come back 201/204 with an EMPTY body — don't JSON.parse
+  // nothing (that throws "Unexpected end of JSON input"). Parse only real content.
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 async function main() {

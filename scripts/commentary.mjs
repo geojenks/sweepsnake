@@ -197,6 +197,96 @@ async function fetchBigNews() {
   return out.slice(0, 16);
 }
 
+// ---- ESPN match events (real minute-by-minute timeline) ----
+// football-data's free tier gives no in-game detail, but ESPN's public, key-less
+// soccer API does: goals (minute + scorer + assist), penalties scored/missed/saved,
+// own goals and red cards. We match ESPN fixtures to ours by date + the pair of
+// team names, then distil each match's "keyEvents" into the moments worth narrating.
+// Entirely best-effort: any failure leaves a match with no events (the writer then
+// falls back to the scoreline), so this can never break the daily job.
+const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const stripAccents = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+const normTeam = (s) => stripAccents(s).toLowerCase().replace(/[^a-z]/g, "");
+// ESPN spellings that differ from ours, collapsed to a shared token.
+const TEAM_ALIAS = { turkiye: "turkey", capeverde: "capeverdeislands" };
+const canonTeam = (s) => { const n = normTeam(s); return TEAM_ALIAS[n] || n; };
+const pairKey = (a, b) => [canonTeam(a), canonTeam(b)].sort().join("__");
+const ymdUTC = (iso) => { const d = new Date(iso); return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`; };
+
+async function espnJson(url) {
+  const r = await fetch(url, { headers: { "user-agent": "sweepsnake-commentary/1.0" } });
+  if (!r.ok) throw new Error(`espn ${r.status}`);
+  return r.json();
+}
+
+// Map an ESPN keyEvent type to a concise kind we care about (null = ignore: subs,
+// throw-ins, drinks breaks, yellow cards, kickoffs, half-time markers, etc.).
+function eventKind(t) {
+  switch (t) {
+    case "Red Card": case "VAR - (Red) Card Upgrade": return { kind: "red card" };
+    case "Penalty - Missed": return { kind: "penalty missed" };
+    case "Penalty - Saved": return { kind: "penalty saved" };
+    case "Penalty - Scored": return { kind: "penalty scored", goal: true };
+    case "Own Goal": return { kind: "own goal", goal: true, og: true };
+    case "Goal - Header": return { kind: "header", goal: true };
+    case "Goal - Volley": return { kind: "volley", goal: true };
+    case "Goal - Free-kick": return { kind: "free-kick", goal: true };
+    case "Goal": return { kind: "goal", goal: true };
+    default: return null;
+  }
+}
+
+function distillEvents(keyEvents) {
+  const out = [];
+  for (const k of keyEvents || []) {
+    const c = eventKind(k.type?.text);
+    if (!c) continue;
+    const players = (k.participants || []).map((p) => p.athlete?.displayName).filter(Boolean);
+    out.push({
+      minute: k.clock?.displayValue || "",
+      team: k.team?.displayName || null,
+      kind: c.kind,
+      player: players[0] || null,
+      ...(c.goal && !c.og && players[1] ? { assist: players[1] } : {}),
+    });
+  }
+  return out;
+}
+
+// matchId -> distilled events[], for the matches in one game-day bucket.
+async function fetchEvents(dayMatches) {
+  const byId = new Map();
+  try {
+    // ESPN files a fixture under its UTC date; check that date and the one before
+    // to cover late-night kickoffs that straddle the boundary.
+    const dates = new Set();
+    for (const m of dayMatches) {
+      dates.add(ymdUTC(m.utc_date));
+      dates.add(ymdUTC(new Date(new Date(m.utc_date).getTime() - 86400000)));
+    }
+    const idx = new Map(); // pairKey -> ESPN event id
+    for (const dt of dates) {
+      try {
+        const j = await espnJson(`${ESPN_BASE}/scoreboard?dates=${dt}`);
+        for (const e of j.events || []) {
+          const cs = e.competitions?.[0]?.competitors || [];
+          if (cs.length >= 2) idx.set(pairKey(cs[0].team?.displayName, cs[1].team?.displayName), e.id);
+        }
+      } catch { /* skip a bad date */ }
+    }
+    for (const m of dayMatches) {
+      const eid = idx.get(pairKey(nameOf(m.home_team_id), nameOf(m.away_team_id)));
+      if (!eid) continue;
+      try {
+        const j = await espnJson(`${ESPN_BASE}/summary?event=${eid}`);
+        const ev = distillEvents(j.keyEvents);
+        if (ev.length) byId.set(String(m.id), ev);
+      } catch { /* skip a match we can't detail */ }
+    }
+  } catch { /* events are optional colour — never fatal */ }
+  return byId;
+}
+
 // ---- Anthropic ----
 const SYSTEM = `You are the resident pundit for a private World Cup 2026 sweepstake among six friends. You write a daily commentator round-up in the voice of the long-running "LPS" (Last Person Standing) emails — a style made famous by Joe, one of the six: long, dramatic, gleefully overwrought sentences; mock-grandiose; biblical and literary asides; stadium-name and pop-culture gags; affectionate but savage roasting of the players; near-fatal-heart-attack hyperbole; British spelling; the occasional well-placed swear word (this is a private group — no sanitising).
 
@@ -229,9 +319,15 @@ GROUNDING RULES (critical — you will be given exact data):
 - Use ONLY the scores, teams, owners, groups, standings and league data provided. Never invent a scoreline, a goalscorer, a minute, a points total, a league position, or any fact not present in the data.
 - The "groupStanding" numbers are real football points (3 win / 1 draw) for qualification. Top two of each group qualify directly. A third-placed team MAY still sneak through as one of the eight best third-placed teams — when a team finishes third, treat its fate as an anxious, uncertain wait, never confirmed in or out, unless told otherwise.
 - "concurrentGames" lists sets of same-group matches that kicked off at the SAME moment (the simultaneous final round). Their results unfolded together and fed off each other — a goal in one swinging qualification in the other, two sides effectively racing. Where it genuinely mattered, dramatise that live interplay; don't force it when the games were dead rubbers.
-- A match may carry a "halfTimeScore" (the score at the break) alongside the full-time "score". Mine the gap between them for drama: a half-time lead thrown away, a goalless first half that burst open, a deficit overturned after the break, a game killed off early then coasted. But half-time-vs-full-time is the ONLY in-game detail you have — you do NOT have goal minutes, scorers, red cards, penalty misses, substitutions or momentum data. Never invent any of those, and never imply a specific moment beyond what the half-time and full-time scores actually reveal.
+- A match may carry a "halfTimeScore" (the score at the break) alongside the full-time "score". Mine the gap between them for drama: a half-time lead thrown away, a goalless first half that burst open, a deficit overturned after the break, a game killed off early then coasted.
+- A match may ALSO carry an "events" array — the real, verified timeline of its notable moments: goals (each with a "minute", the "player" who scored and often the "assist"), penalties scored/missed/saved, own goals, and red cards (a "kind" field labels each). When this is present, these are FACTS you may name freely and should use to tell the story properly: the scorer, an "88th-minute winner", a deficit hauled back, a missed penalty that proved costly, a red card that broke a game open, a calamitous 3rd-minute own goal. The "minute" is the match clock — "90'+4'" means stoppage time. This is the chance to single out heroes and villains by name. But the events list is exhaustive for the moments it covers: you still have NO substitutions, possession, chances or momentum data, so invent nothing beyond what each event states, and never add a goal, card or minute that isn't listed.
+- When a match has NO "events" array, you have only its half-time and full-time scores: describe it from the scoreline alone and invent no minutes, scorers, cards or penalties.
 
-OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of roughly 400–750 words: an opening (a brisk scene-setter, or the flavour opener described above), then the meat (group-by-group or match-by-match, folding in league movements where they matter), then a sharp closing "reckoning" paragraph naming who came out ahead — on the night and in the tables. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
+THE BEST-THIRDS CUT-OFF: on days that finish off groups the data carries a "bestThirds" block — the cross-group race for the eight third-place qualifying spots, ranked, with "climbedInTonight" and "knockedOutTonight" listing exactly who jumped above the line and who was shoved below it by today's results. This is a goldmine of cruelty: a side sitting in a hotel watching their qualification evaporate because a team in another group nicked a late equaliser. When the lists are non-empty, tell that story by name — "X's stoppage-time leveller didn't just rescue a point, it bumped poor Y out of the tournament altogether without Y kicking a ball" — but ONLY using the teams the data actually names as climbing in or being knocked out. Never invent who was on the bubble.
+
+LOOKING AHEAD (every write-up ends here, for every round — groups included): the data has a "lookingAhead" block — for each team that played today, the REAL next fixture it has earned ("nextStage", "kickoff", "opponent" with the opponent's "finishedAs" seeding), or "eliminated" if it's out. Close the piece by turning to what's next: who has drawn whom, the tie to savour or to dread, a friend handed a kindly or a brutal draw, two friends' teams set on a collision course deeper in the bracket, a seed who'll fancy their chances or one walking into a buzzsaw. Build this ONLY from lookingAhead — when an opponent is "to be decided", say exactly that and do NOT name or guess it; never invent a pairing, a stage or a kickoff time. Where today's games settled a group, dramatise what was riding on them — who needed what, who scraped through as a best third, who was dumped out and who they dragged down with them — using the final "groupStanding" and "bestThirds" data. WATCH FOR THE PERVERSE DRAW: sometimes finishing HIGHER earns a NASTIER tie — a runner-up landing a far tougher opponent than the third-placed side from their own group, so a team might secretly have preferred to finish a place lower. When the lookingAhead opponents make that the case, relish the catch-22. You MAY state a qualification consequence only when it is a plain, certain fact (e.g. "a point apiece was enough to send both through"); do NOT speculate on which knockout opponent a different scoreline would have produced. Match the forward-look to the round: after the group stage it previews the Round of 32 draw; after a knockout round it previews the next tie (or notes an opponent still to be decided).
+
+OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The title is a short, punny headline (no leading "#"). The subtitle is a separate witty one-line sub-headline — a DIFFERENT joke from the title, not a rephrase. The html is a fragment of roughly 450–800 words: an opening (a brisk scene-setter, or the flavour opener described above), then the meat (group-by-group or match-by-match, folding in league movements where they matter), a sharp "reckoning" paragraph naming who came out ahead on the night and in the tables, and finally the LOOKING-AHEAD paragraph described above. Use only <p>, <strong>, <em> and <h4> tags. Include each team's flag emoji next to its name on first mention. No <html>/<body>/<style>, no markdown.`;
 
 async function generate(facts, { search = true } = {}) {
   const body = {
@@ -328,8 +424,68 @@ function playerForm(allFinished, uptoKey) {
   return [...acc].map(([pid, byDay]) => ({ player: pidToName(pid), byDay }));
 }
 
+// ---- looking ahead: each team's real NEXT fixture, for the forward-look ----
+// team_id -> the earliest still-to-play match it appears in (the whole bracket is
+// scheduled, so a surviving team always has one; an eliminated team has none).
+function nextFixtureIndex(allMatches) {
+  const idx = new Map();
+  const upcoming = allMatches
+    .filter((m) => !DONE_STATUS.has(m.status) && m.home_team_id && m.away_team_id && m.utc_date)
+    .sort((a, b) => a.utc_date.localeCompare(b.utc_date));
+  for (const m of upcoming) {
+    for (const id of [m.home_team_id, m.away_team_id]) if (!idx.has(id)) idx.set(id, m);
+  }
+  return idx;
+}
+
+// Final group position for every team (same tie-breakers as groupStanding), so we
+// can label a future opponent as "Group H runners-up" etc.
+function finalGroupSeeds(finished) {
+  const seeds = new Map();
+  const groups = new Set([...team.values()].map((t) => t.group).filter((g) => g && g !== "?"));
+  for (const g of groups) {
+    const ids = [...team.keys()].filter((id) => team.get(id).group === g);
+    const rows = ids.map((id) => {
+      const ms = finished.filter((m) => m.stage === "GROUP_STAGE" &&
+        (m.home_team_id === id || m.away_team_id === id) &&
+        ids.includes(m.home_team_id) && ids.includes(m.away_team_id));
+      return { id, ...record(ms, id) };
+    }).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+    rows.forEach((r, i) => seeds.set(r.id, { group: g, position: i + 1 }));
+  }
+  return seeds;
+}
+
+// Cross-group "best third-placed" ranking from a set of finished group matches. A
+// group contributes its third-placed side only once all six of its matches are in
+// (so the third place is actually settled); ranked by pts, then GD, then GF. The
+// top eight qualify for the Round of 32. Computing this before vs after a game-day
+// reveals the live cutoff shifting — who climbed in and who got bumped out.
+function thirdsRanked(groupMatches) {
+  const groups = [...new Set([...team.values()].map((t) => t.group).filter((g) => g && g !== "?"))];
+  const thirds = [];
+  for (const g of groups) {
+    const ids = [...team.keys()].filter((id) => team.get(id).group === g);
+    const gm = groupMatches.filter((m) => ids.includes(m.home_team_id) && ids.includes(m.away_team_id));
+    if (gm.length < 6) continue; // group not mathematically complete yet
+    const rows = ids
+      .map((id) => ({ id, ...record(gm.filter((m) => m.home_team_id === id || m.away_team_id === id), id) }))
+      .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+    thirds.push({ group: g, ...rows[2] });
+  }
+  return thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+}
+
+const STAGE_LABEL = {
+  LAST_32: "Round of 32", ROUND_OF_16: "Round of 16", LAST_16: "Round of 16",
+  QUARTER_FINALS: "quarter-final", SEMI_FINALS: "semi-final",
+  THIRD_PLACE: "third-place play-off", FINAL: "final",
+};
+const prettyStage = (s) => STAGE_LABEL[s] || s;
+const seedLabel = (p) => p === 1 ? "group winners" : p === 2 ? "runners-up" : p === 3 ? "third place" : `${p}th`;
+
 // ---- build the facts payload for one game day ----
-function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
+function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews, eventsMap, nextIdx, seeds) {
   const desc = (id) => {
     const t = team.get(id) || { name: id, flag: "", group: "?" };
     const o = owner.get(id) || { name: "Unowned", handle: "?", tier: null };
@@ -346,6 +502,7 @@ function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
     stage: m.stage,
     matchday: m.matchday,
     kickoffBST: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London" }).format(new Date(m.utc_date)) + " BST",
+    events: eventsMap?.get(String(m.id)) || null,
   }));
 
   // Same-group games that kicked off at the SAME time — their results played out
@@ -380,11 +537,35 @@ function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
       const t = team.get(id) || {};
       return { team: t.name, flag: t.flag, owner: o.name || "Unowned", ...r };
     }).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+    // Groups are complete: ground qualification in whether each team actually has
+    // a knockout fixture still to play (nextIdx), not a position-based guess.
+    const idByRow = rows.map((row) => ids.find((id) => team.get(id)?.name === row.team));
     rows.forEach((row, i) => {
       row.position = i + 1;
-      row.status = i < 2 ? "qualified (top 2)" : (i === 2 ? "third — best-third lottery, uncertain" : "eliminated unless drama elsewhere");
+      const through = !!nextIdx?.get(idByRow[i]);
+      if (i < 2) row.status = through ? "qualified (top two)" : "eliminated";
+      else if (i === 2) row.status = through ? "qualified as one of the eight best third-placed teams" : "eliminated — third, missed the best-thirds cut";
+      else row.status = "eliminated";
     });
     groupStanding[`Group ${g}`] = rows;
+  }
+
+  // best third-placed cutoff, before vs after today — only worth it on a day that
+  // actually featured group games (it's settled once the group stage is over).
+  let bestThirds;
+  if (dayMatches.some((m) => m.stage === "GROUP_STAGE")) {
+    const grp = allFinished.filter((m) => m.stage === "GROUP_STAGE");
+    const afterT = thirdsRanked(grp.filter((m) => gameDayKey(m.utc_date) <= key));
+    const beforeT = thirdsRanked(grp.filter((m) => gameDayKey(m.utc_date) < key));
+    const beforeQ = new Set(beforeT.slice(0, 8).map((t) => t.id));
+    const afterQ = new Set(afterT.slice(0, 8).map((t) => t.id));
+    const lite = (t) => ({ team: team.get(t.id)?.name, flag: team.get(t.id)?.flag || "", group: `Group ${t.group}`, owner: (owner.get(t.id) || {}).name || "Unowned" });
+    bestThirds = {
+      note: "The eight best third-placed teams join the group winners and runners-up in the Round of 32; the thirds ranked 9th–12th are eliminated. Ranked by points, then goal difference, then goals for. A group appears only once it is mathematically complete, so this table firms up as the final group games finish — and the qualifying cut-off can move with a single late goal.",
+      table: afterT.map((t, i) => ({ rank: i + 1, ...lite(t), pts: t.pts, gd: t.gd, gf: t.gf, status: i < 8 ? "qualifies (inside the top 8)" : "eliminated" })),
+      climbedInTonight: afterT.slice(0, 8).filter((t) => !beforeQ.has(t.id)).map(lite),
+      knockedOutTonight: beforeT.slice(0, 8).filter((t) => !afterQ.has(t.id)).map(lite),
+    };
   }
 
   // sweepstake league movement: before tonight vs after
@@ -392,11 +573,39 @@ function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
   const after = allFinished.filter((m) => gameDayKey(m.utc_date) <= key);
   const sweepstakeLeagues = sweepContext(before, after);
 
+  // Looking ahead: every team that played today, and the REAL next fixture it has
+  // earned (or its elimination). An opponent is named only when BOTH teams have
+  // this same match as their immediate next game — i.e. both are already locked in;
+  // otherwise the other side is still "to be decided" and naming it would leak a
+  // result that hasn't happened yet in the serial.
+  const fmtKick = (iso) => new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London" }).format(new Date(iso)) + " BST";
+  const descAhead = (id) => {
+    const d = desc(id);
+    const s = seeds?.get(id);
+    return { team: d.team, flag: d.flag, owner: d.owner, gamertag: d.gamertag,
+      ...(s ? { finishedAs: `Group ${s.group} ${seedLabel(s.position)}` } : {}) };
+  };
+  const involved = [...new Set(dayMatches.flatMap((m) => [m.home_team_id, m.away_team_id]))].filter(Boolean);
+  const lookingAhead = involved.map((id) => {
+    const f = nextIdx?.get(id);
+    if (!f) return { ...descAhead(id), status: "eliminated — no fixtures remaining" };
+    const oppId = f.home_team_id === id ? f.away_team_id : f.home_team_id;
+    const mutual = String(nextIdx.get(oppId)?.id) === String(f.id);
+    return {
+      ...descAhead(id),
+      status: "still in",
+      nextStage: prettyStage(f.stage),
+      kickoff: fmtKick(f.utc_date),
+      opponent: mutual ? descAhead(oppId) : "to be decided (their tie hasn't been played yet)",
+    };
+  });
+
   return {
     gameDay: dayLabel(key),
     previousDays: recentNarratives(priorEntries, key),
     playerForm: playerForm(allFinished, key),
-    matches, concurrentGames, groupStanding, sweepstakeLeagues,
+    matches, concurrentGames, groupStanding, sweepstakeLeagues, lookingAhead,
+    ...(bestThirds ? { bestThirds } : {}),
     ...(bigNews?.length ? { bigNews } : {}),
   };
 }
@@ -404,6 +613,8 @@ function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews) {
 // ---- main ----
 const allMatches = await fetchMatches();
 const finished = allMatches.filter((m) => DONE_STATUS.has(m.status));
+const nextIdx = nextFixtureIndex(allMatches);   // team -> real next fixture (forward-look)
+const seeds = finalGroupSeeds(finished);        // team -> final group position (opponent labels)
 
 const dayMatches = new Map(); // key -> finished matches[]
 for (const m of finished) {
@@ -437,8 +648,13 @@ if (process.env.PREVIEW) {
   if (!key || !dayMatches.has(key)) { console.error("No closed game day to preview."); process.exit(1); }
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
   console.error(`PREVIEW — ${dayLabel(key)} (${dm.length} matches) via ${MODEL}. Not written to file.\n`);
-  const bigNews = await fetchBigNews();
-  const { title, subtitle, html } = await generate(buildFacts(dm, finished, key, store.entries, bigNews));
+  const bigNews = process.env.DUMP_FACTS ? [] : await fetchBigNews();
+  const eventsMap = await fetchEvents(dm);
+  const facts = buildFacts(dm, finished, key, store.entries, bigNews, eventsMap, nextIdx, seeds);
+  // DUMP_FACTS=1 PREVIEW=1 PREVIEW_DAY=YYYY-MM-DD — print the grounding payload only
+  // (no API call), to eyeball events / lookingAhead / group statuses.
+  if (process.env.DUMP_FACTS) { console.log(JSON.stringify(facts, null, 2)); process.exit(0); }
+  const { title, subtitle, html } = await generate(facts);
   console.log(`# ${title}\n_${subtitle}_\n\n${html}`);
   process.exit(0);
 }
@@ -450,7 +666,8 @@ const candidates = [...dayMatches.keys()]
   .sort()
   .reverse();
 
-const todo = process.env.DAYS === "all" ? candidates.slice().reverse() : candidates.slice(0, 1);
+const backfill = process.env.DAYS === "all";
+const todo = backfill ? candidates.slice().reverse() : candidates.slice(0, 1);
 
 if (!todo.length) {
   console.log("No fully-settled new game day to write up — nothing to do.");
@@ -458,14 +675,17 @@ if (!todo.length) {
 }
 
 // Fetch news once, only now that we know we're generating. Skip during backfill —
-// today's headlines would be anachronistic on an old game day.
-const bigNews = process.env.DAYS === "all" ? [] : await fetchBigNews();
+// today's headlines would be anachronistic on an old game day, and live web_search
+// (the slow part) is dropped too so a multi-day catch-up doesn't crawl.
+const bigNews = backfill ? [] : await fetchBigNews();
 
+let written = 0;
 for (const key of todo) {
   const dm = dayMatches.get(key).slice().sort((a, b) => a.utc_date.localeCompare(b.utc_date));
-  const facts = buildFacts(dm, finished, key, store.entries, bigNews);
+  const eventsMap = await fetchEvents(dm);
+  const facts = buildFacts(dm, finished, key, store.entries, bigNews, eventsMap, nextIdx, seeds);
   console.log(`Generating ${key} (${dm.length} matches)…`);
-  const { title, subtitle, html } = await generate(facts);
+  const { title, subtitle, html } = await generate(facts, { search: !backfill });
   store.entries = (store.entries || []).filter((e) => e.day_key !== key);
   store.entries.push({
     day_key: key,
@@ -477,10 +697,14 @@ for (const key of todo) {
     model: MODEL,
     generated_at: new Date().toISOString(),
   });
+  // Persist after EACH day so a slow/interrupted run never loses finished work and
+  // a later run resumes from where it left off (each saved day is also a callback
+  // source for the next).
+  store.entries.sort((a, b) => b.day_key.localeCompare(a.day_key));
+  store.updated_at = new Date().toISOString();
+  writeFileSync(cmPath, JSON.stringify(store, null, 2));
+  written++;
   console.log(`  ✓ "${title}"`);
 }
 
-store.entries.sort((a, b) => b.day_key.localeCompare(a.day_key));
-store.updated_at = new Date().toISOString();
-writeFileSync(cmPath, JSON.stringify(store, null, 2));
-console.log(`Wrote ${todo.length} entr${todo.length === 1 ? "y" : "ies"}; ${store.entries.length} total.`);
+console.log(`Wrote ${written} entr${written === 1 ? "y" : "ies"}; ${store.entries.length} total.`);
