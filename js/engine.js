@@ -75,7 +75,6 @@ export function tierColour(tier) {
 //   { teamId, played, w, d, l, gf, ga, gd, matchPoints, bonusPoints, total }
 export function computeStandings(matches) {
   const table = new Map();
-  const koStages = new Map(); // teamId -> Set of knockout stage names reached
 
   const ensure = (id) => {
     if (!table.has(id)) {
@@ -84,7 +83,6 @@ export function computeStandings(matches) {
         gf: 0, ga: 0, gd: 0,
         matchPoints: 0, bonusPoints: 0, total: 0,
       });
-      koStages.set(id, new Set());
     }
     return table.get(id);
   };
@@ -107,11 +105,13 @@ export function computeStandings(matches) {
       const shootoutWinner = m.winner === "HOME" ? home : away;
       shootoutWinner.matchPoints += POINTS.PEN_BONUS;
     } else if (m.type === "EXTRA_TIME") {
-      // Settled in extra time: a win/loss, no draw point for the loser.
+      // Settled in extra time. Winner records a win; loser records a loss but
+      // keeps the consolation draw point for having drawn in 90 minutes.
       const winner = m.winner === "HOME" ? home : away;
       const loser = m.winner === "HOME" ? away : home;
       winner.w += 1; loser.l += 1;
       winner.matchPoints += POINTS.ET_WIN;
+      loser.matchPoints += POINTS.DRAW;
     } else { // REGULAR
       if (m.winner === "DRAW") {
         home.d += 1; away.d += 1;
@@ -124,16 +124,16 @@ export function computeStandings(matches) {
       }
     }
 
-    // Track knockout progression for the advancement bonus.
-    if (ADVANCEMENT_STAGES.has(m.stage)) {
-      koStages.get(m.home).add(m.stage);
-      koStages.get(m.away).add(m.stage);
+    // Advancement bonus: only the winner of a knockout match earns +ADVANCE,
+    // awarded immediately (not deferred to when they play the next round).
+    if (ADVANCEMENT_STAGES.has(m.stage) && m.winner !== "DRAW") {
+      const advWinner = m.winner === "HOME" ? home : away;
+      advWinner.bonusPoints += POINTS.ADVANCE;
     }
   }
 
-  // Finalise bonus + totals + GD.
-  for (const [id, s] of table) {
-    s.bonusPoints = koStages.get(id).size * POINTS.ADVANCE;
+  // Finalise totals + GD.
+  for (const [, s] of table) {
     s.gd = s.gf - s.ga;
     s.total = s.matchPoints + s.bonusPoints;
   }
