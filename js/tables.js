@@ -84,7 +84,8 @@ function eliminatedSet(matches, teamsFile) {
     }
   }
 
-  // For each fully-completed group, the bottom team (4th place) is eliminated.
+  // For each fully-completed group, 4th place is out; collect 3rd-place finishers.
+  const thirdPlacers = []; // { teamId, stats } — for cross-group comparison
   for (const [, members] of groupMembers) {
     if (!members.every((id) => (gStats.get(id)?.played || 0) >= 3)) continue;
     const sorted = [...members].sort((a, b) => {
@@ -93,6 +94,19 @@ function eliminatedSet(matches, teamsFile) {
       return (sb.pts - sa.pts) || (sb.gd - sa.gd) || (sb.gf - sa.gf);
     });
     eliminated.add(sorted[3]); // definite last place
+    thirdPlacers.push({ teamId: sorted[2], stats: gStats.get(sorted[2]) || { pts: 0, gd: 0, gf: 0 } });
+  }
+
+  // Once ALL groups are complete the bottom 4 third-place teams are also out.
+  // WC 2026: 12 groups, 8 best third-placers advance → bottom 4 eliminated.
+  const totalGroups = groupMembers.size; // 12 for WC 2026
+  if (thirdPlacers.length === totalGroups) {
+    thirdPlacers.sort((a, b) =>
+      (b.stats.pts - a.stats.pts) || (b.stats.gd - a.stats.gd) || (b.stats.gf - a.stats.gf));
+    const eliminatedThird = totalGroups - 8; // = 4
+    for (let i = totalGroups - eliminatedThird; i < totalGroups; i++) {
+      eliminated.add(thirdPlacers[i].teamId);
+    }
   }
 
   return eliminated;
