@@ -1,7 +1,7 @@
 // tables.js — live subsumptive league tables during the tournament.
 import {
   computeStandings, computeLeagues, computePlayerLeague, tierColour,
-  leaguePrize, playerLeaguePrize,
+  leaguePrize, playerLeaguePrize, ADVANCEMENT_STAGES, POINTS,
 } from "./engine.js";
 import { onTableChange, getDraftPicks } from "./supabase.js";
 import { $, el, fmtSigned, playerColour, playerSubname, loadLiveData, showError } from "./app.js";
@@ -255,6 +255,19 @@ function render() {
 
   const engineTeams = drafted.map((t) => ({ teamId: t.id, tier: t.tier }));
   const standings = withAllDrafted(computeStandings(canonicalMatches(matches)), drafted);
+
+  // Advancement bonus: +ADVANCE per knockout round a team is confirmed in.
+  // Scan ALL matches (any status) so the bonus fires as soon as a team's ID
+  // appears in a knockout fixture — i.e. the moment they qualify from the group
+  // stage, before their first knockout game is played.
+  for (const m of matches) {
+    if (!ADVANCEMENT_STAGES.has(m.stage)) continue;
+    for (const id of [m.home_team_id, m.away_team_id]) {
+      const s = id && standings.get(id);
+      if (s) { s.bonusPoints += POINTS.ADVANCE; s.total = s.matchPoints + s.bonusPoints; }
+    }
+  }
+
   const leagues = computeLeagues(engineTeams, standings, nRounds, orderKey);
   const playerLeague = computePlayerLeague(ownerOf, standings)
     .sort((a, b) => b.total - a.total || b.gd - a.gd || b.gf - a.gf

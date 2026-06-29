@@ -121,15 +121,12 @@ export function computeStandings(matches) {
       }
     }
 
-    // Advancement bonus: only the winner of a knockout match earns +ADVANCE,
-    // awarded immediately (not deferred to when they play the next round).
-    if (ADVANCEMENT_STAGES.has(m.stage) && m.winner !== "DRAW") {
-      const advWinner = m.winner === "HOME" ? home : away;
-      advWinner.bonusPoints += POINTS.ADVANCE;
-    }
   }
 
-  // Finalise totals + GD.
+  // Finalise totals + GD. Advancement bonus is NOT computed here — it depends
+  // on unplayed future fixtures (a team earns +ADVANCE the moment they appear
+  // in a knockout bracket slot, before that match is played). Callers that have
+  // access to the full match list should apply it externally after this call.
   for (const [, s] of table) {
     s.gd = s.gf - s.ga;
     s.total = s.matchPoints + s.bonusPoints;
