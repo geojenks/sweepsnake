@@ -179,6 +179,9 @@ function teamPopupContent(teamId) {
       el("div", { class: "muted", style: { fontSize: "0.7rem" } }, next.utc_date ? fmtDate(next.utc_date) : "Date TBD")));
   } else if (eliminated.has(teamId)) {
     wrap.append(el("div", { class: "muted", style: { marginTop: "6px", fontSize: "0.75rem" } }, "Eliminated"));
+  } else {
+    wrap.append(el("div", { class: "muted", style: { marginTop: "6px", fontSize: "0.75rem" } },
+      "Next fixture to be confirmed — check the bracket"));
   }
 
   // Owner
@@ -256,14 +259,32 @@ function render() {
   const engineTeams = drafted.map((t) => ({ teamId: t.id, tier: t.tier }));
   const standings = withAllDrafted(computeStandings(canonicalMatches(matches)), drafted);
 
-  // Advancement bonus: +ADVANCE per knockout round a team is confirmed in.
-  // Scan ALL matches (any status) so the bonus fires as soon as a team's ID
-  // appears in a knockout fixture — i.e. the moment they qualify from the group
-  // stage, before their first knockout game is played.
+  // Advancement bonus — two signals, both needed because football-data.org
+  // populates next-round fixture slots with a lag after each result:
+  //
+  //  1. Appear in any LAST_32 fixture (home or away, any status):
+  //     the bracket is fully resolved once all groups finish, so every
+  //     qualifying team is visible here immediately. +ADVANCE each.
+  //
+  //  2. Win any finished knockout match (LAST_32 through FINAL):
+  //     credits the progression bonus the moment the result lands, without
+  //     waiting for the winner's ID to appear in the next round's DB row.
+  //
+  // Together: group qualifier gets +2 as soon as their R32 slot resolves;
+  // each subsequent win adds another +2 on the result — no next-fixture needed.
   for (const m of matches) {
     if (!ADVANCEMENT_STAGES.has(m.stage)) continue;
-    for (const id of [m.home_team_id, m.away_team_id]) {
-      const s = id && standings.get(id);
+
+    if (m.stage === "LAST_32") {
+      for (const id of [m.home_team_id, m.away_team_id]) {
+        const s = id && standings.get(id);
+        if (s) { s.bonusPoints += POINTS.ADVANCE; s.total = s.matchPoints + s.bonusPoints; }
+      }
+    }
+
+    if (m.status === "FINISHED" && m.winner && m.winner !== "DRAW") {
+      const winnerId = m.winner === "HOME" ? m.home_team_id : m.away_team_id;
+      const s = winnerId && standings.get(winnerId);
       if (s) { s.bonusPoints += POINTS.ADVANCE; s.total = s.matchPoints + s.bonusPoints; }
     }
   }
