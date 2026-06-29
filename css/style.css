@@ -145,6 +145,74 @@ table.board tbody tr.hidden-row { display: none; }
 
 .footnote { color: var(--text-faint); font-size: 0.78rem; margin-top: 24px; }
 
+/* ---- Radial knockout bracket ---- */
+.bracket-wrap { position: relative; max-width: 640px; margin: 6px auto 0; }
+svg.bracket { width: 100%; height: auto; display: block; overflow: visible; }
+
+.bk-line { fill: none; stroke: var(--line); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bk-line.live { stroke: var(--gold); stroke-width: 2.5; opacity: 0.9; }
+.bk-trophy { font-size: 52px; }
+
+/* flag badges */
+.bf { cursor: pointer; transition: transform .55s cubic-bezier(.4, 0, .2, 1), opacity .35s ease; }
+.bf.animating { transition: none; }
+.bf-owner { fill: none; stroke-width: 5.5; }            /* thick owner-colour ring */
+.bf-ring { fill: var(--bg); stroke: var(--line); stroke-width: 2; }
+.bf-emoji { font-size: 30px; }
+/* eliminated: dimmed but still recognisable (opacity is set inline by the engine) */
+.bf.elim { filter: grayscale(.45); transition: transform .55s cubic-bezier(.4, 0, .2, 1), opacity .4s, filter .4s; }
+
+/* score written over an eliminated team's flag */
+.bf-score { opacity: 0; transition: opacity .35s; pointer-events: none; }
+.bf.elim .bf-score { opacity: 1; }
+.bf-score-bg { fill: rgba(13, 17, 23, 0.6); }
+.bf-score-text { fill: #fff; font-weight: 700; font-size: 15px; font-family: var(--num-font); }
+
+/* country name — shown on hover, pinned on click */
+.bf-name {
+  fill: var(--text); stroke: var(--bg); stroke-width: 4px; paint-order: stroke;
+  font-family: var(--ui-font); font-size: 16px; font-weight: 700;
+  opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.bf:hover .bf-name, .bf.named .bf-name { opacity: 1; }
+.bf:hover { /* lift hovered flag above neighbours so its name isn't clipped */ }
+
+/* unresolved entrant placeholders */
+.bf-ph-c { fill: var(--bg-row); stroke: var(--line-soft); stroke-width: 2; stroke-dasharray: 3 3; }
+.bf-ph-t { fill: var(--text-faint); font-size: 14px; font-weight: 700; font-family: var(--num-font); }
+
+/* focus legend (sweepsnake variant) */
+.bk-legend {
+  position: absolute; top: 0; left: 0; display: flex; flex-direction: column; gap: 1px;
+  background: rgba(13, 17, 23, 0.55); border: 1px solid var(--line); border-radius: 9px;
+  padding: 6px; backdrop-filter: blur(2px);
+}
+.bk-legend-title { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); padding: 0 4px 2px; }
+.bk-legend-item {
+  display: flex; align-items: center; gap: 7px; background: none; border: none;
+  color: var(--text-dim); font-family: var(--ui-font); font-size: 0.78rem; font-weight: 600;
+  padding: 3px 5px; border-radius: 6px; cursor: pointer; text-align: left; transition: all .12s ease;
+}
+.bk-legend-item:hover { background: var(--bg-row); color: var(--text); }
+.bk-legend-item.is-sel { background: var(--bg-row); color: var(--text); }
+.bk-legend-item.is-sel .bk-swatch { box-shadow: 0 0 0 2px var(--bg-raised), 0 0 0 3px currentColor; }
+.bk-swatch { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+
+/* transport bar */
+.bracket-controls { display: flex; gap: 6px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.bk-tbtn { padding: 5px 11px; font-size: 1rem; line-height: 1; min-width: 38px; }
+.bk-range { flex: 1; min-width: 140px; accent-color: var(--gold); cursor: pointer; }
+.bk-label { text-align: center; margin-top: 8px; font-family: var(--num-font); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bf, .bf.elim { transition: none; }
+}
+
+@media (max-width: 560px) {
+  .bk-legend { position: static; flex-direction: row; flex-wrap: wrap; margin: 0 auto 8px; width: fit-content; }
+  .bk-legend-title { width: 100%; text-align: center; }
+}
+
 @media (max-width: 560px) {
   .topbar nav { width: 100%; margin-left: 0; }
 }

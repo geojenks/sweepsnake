@@ -14,6 +14,8 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # needed to commit the bracket snapshot back to the repo
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,3 +31,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: node scripts/sync.mjs
+
+      # sync.mjs rewrites data/bracket-results.json (the public bracket's feed).
+      # It only changes on a real knockout event, so most runs commit nothing.
+      - name: Commit bracket snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/bracket-results.json
+          if git diff --cached --quiet; then
+            echo "No bracket change — nothing to commit."
+          else
+            git commit -m "chore: bracket results snapshot [skip ci]"
+            git pull --rebase --autostash
+            git push
+          fi

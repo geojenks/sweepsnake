@@ -6,6 +6,7 @@
 import { computeStandings, rankComparator } from "./engine.js";
 import { onTableChange } from "./supabase.js";
 import { $, el, fmtSigned, playerColour, playerSubname, loadLiveData, showError } from "./app.js";
+import { renderRadialBracket } from "./bracket.js";
 
 const root = $("#content");
 const state = { data: null, fixtures: null, teamsFile: null, view: "group" };
@@ -64,7 +65,7 @@ function render() {
 
   // Team metadata: static file is the always-present base; overlay DB owner/tier.
   const meta = new Map(state.teamsFile.teams.map((t) =>
-    [t.id, { id: t.id, name: t.name, flag: t.flag, group: t.group, player_id: null, tier: null }]));
+    [t.id, { id: t.id, name: t.name, flag: t.flag, tla: t.tla, group: t.group, player_id: null, tier: null }]));
   for (const t of teams) {
     const m = meta.get(t.id) || { id: t.id, name: t.name, flag: t.flag };
     m.player_id = t.player_id; m.tier = t.tier;
@@ -83,6 +84,7 @@ function render() {
 
   root.innerHTML = "";
   root.append(intro(playedCount));
+  root.append(bracketSection(state.fixtures, meta, dbById, playerById));
   root.append(viewToggle());
   if (state.view === "chrono") {
     // Tables first, then every group fixture in one chronological list.
@@ -119,6 +121,26 @@ function intro(played) {
       played
         ? `${played} match${played === 1 ? "" : "es"} played so far.`
         : "Kick-off 11 June — nothing played yet, so every score shows a dash."));
+}
+
+// ---- Radial bracket (the animated knockout graphic) ----
+function bracketSection(fixtures, meta, dbById, playerById) {
+  const panel = el("div", { class: "panel" },
+    el("h2", {}, "Knockout bracket ",
+      el("span", { class: "muted small" }, "— flags climb toward the trophy with each win")),
+    el("p", { class: "muted small", style: { margin: "0 0 8px" } },
+      "Every team starts on the outer ring. Win a knockout tie and your flag travels inward along the line to the next round; ",
+      "the team left behind dims with the score over its flag. Play or step through to replay the knockout game by game, ",
+      "and tap a player in the legend to follow their teams."));
+  const mount = el("div", {});
+  panel.append(mount);
+  // player colour rings + focus legend tie each flag to whoever drafted it
+  const players = [...playerById.values()].map((p) => ({
+    id: p.id, name: playerSubname(p) || p.name, colour: playerColour(p),
+  }));
+  const ownerOf = (id) => meta.get(id)?.player_id ?? null;
+  renderRadialBracket(mount, { fixtures, meta, dbById, players, ownerOf });
+  return panel;
 }
 
 // ---- Group stage ----

@@ -10,6 +10,10 @@
 //   SUPABASE_SERVICE_KEY    service_role key (server-side only) — used if present
 //   SUPABASE_ANON_KEY       anon key (fallback)
 
+import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
 // Public defaults, mirrored from js/config.js (safe to commit; anon-only access).
 const DEFAULT_URL = "https://tkbkeqtywttaasyutmsj.supabase.co";
 const DEFAULT_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYmtlcXR5d3R0YWFzeXV0bXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTU4NjksImV4cCI6MjA5NTg5MTg2OX0.begyj0OQidbXTl-3bdjjHUcud4xjpeKt8AWXQnSiZ2A";
@@ -117,6 +121,44 @@ async function main() {
   }
   const fin = rows.filter((r) => r.status === "FINISHED").length;
   console.log(`Synced ${rows.length} matches (${fin} finished, ${skip.size} overridden left untouched).`);
+
+  await writeBracketSnapshot();
+}
+
+// Write data/bracket-results.json — the static results feed the public radial
+// bracket (bracket-public.html) reads. Sourced from the DB (so it includes any
+// commissioner overrides), knockout stages only, with volatile fields normalised:
+// scores stay null until FINISHED and status collapses to FINISHED/SCHEDULED, so
+// the file only changes on a real bracket event (entrant resolved or tie decided)
+// — never on in-play score flicker — keeping CI commits rare.
+const SNAPSHOT_STAGES = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"];
+async function writeBracketSnapshot() {
+  const cols = "id,status,home_team_id,away_team_id,home_score,away_score,winner,match_type,pen_home,pen_away";
+  const rows = (await sbRequest("GET", `/matches?select=${cols}&stage=in.(${SNAPSHOT_STAGES.join(",")})`)) || [];
+  const matches = rows
+    .map((r) => {
+      const finished = r.status === "FINISHED";
+      return {
+        id: String(r.id),
+        status: finished ? "FINISHED" : "SCHEDULED",
+        home_team_id: r.home_team_id ?? null,
+        away_team_id: r.away_team_id ?? null,
+        home_score: finished ? r.home_score ?? null : null,
+        away_score: finished ? r.away_score ?? null : null,
+        winner: finished ? r.winner ?? null : null,
+        match_type: finished ? r.match_type ?? null : null,
+        pen_home: finished ? r.pen_home ?? null : null,
+        pen_away: finished ? r.pen_away ?? null : null,
+      };
+    })
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const out = {
+    note: "Knockout results snapshot for the public radial bracket. Written by scripts/sync.mjs; do not edit by hand.",
+    matches,
+  };
+  const file = join(dirname(fileURLToPath(import.meta.url)), "..", "data", "bracket-results.json");
+  writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
+  console.log(`Wrote ${matches.length} knockout rows to data/bracket-results.json`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
