@@ -73,16 +73,38 @@ async function main() {
     if (skip.has(id)) continue;
     const s = m.score || {};
     const finished = m.status === "FINISHED";
+    const isPen = s.duration === "PENALTY_SHOOTOUT";
+
+    // For penalty-shootout games football-data.org sometimes stores the
+    // cumulative (play + shootout goals) total in fullTime instead of the
+    // 90/120-min score. extraTime is reliably the score before the shootout,
+    // so prefer it for PENALTY_SHOOTOUT; fall back to fullTime otherwise.
+    const matchScore = isPen ? (s.extraTime ?? s.fullTime) : s.fullTime;
+
+    // football-data.org occasionally returns winner="DRAW" for a finished
+    // penalty-shootout while it is still processing the result. Infer the real
+    // winner from the penalty scores when that happens.
+    let winner = null;
+    if (finished) {
+      if (!isPen || s.winner !== "DRAW") {
+        winner = WINNER[s.winner] ?? null;
+      } else {
+        const ph = s.penalties?.home, pa = s.penalties?.away;
+        if (ph != null && pa != null && ph !== pa) winner = ph > pa ? "HOME" : "AWAY";
+        else winner = WINNER[s.winner] ?? null;
+      }
+    }
+
     rows.push({
       id,
       home_team_id: m.homeTeam?.id != null ? String(m.homeTeam.id) : null,
       away_team_id: m.awayTeam?.id != null ? String(m.awayTeam.id) : null,
-      home_score: finished ? s.fullTime?.home ?? null : null,
-      away_score: finished ? s.fullTime?.away ?? null : null,
+      home_score: finished ? matchScore?.home ?? null : null,
+      away_score: finished ? matchScore?.away ?? null : null,
       half_time_home: finished ? s.halfTime?.home ?? null : null,
       half_time_away: finished ? s.halfTime?.away ?? null : null,
       match_type: finished ? matchType(s.duration) : null,
-      winner: finished ? WINNER[s.winner] ?? null : null,
+      winner,
       pen_home: s.penalties?.home ?? null,
       pen_away: s.penalties?.away ?? null,
       stage: m.stage,

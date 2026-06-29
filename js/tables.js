@@ -282,8 +282,15 @@ function render() {
       }
     }
 
-    if (m.status === "FINISHED" && m.winner && m.winner !== "DRAW") {
-      const winnerId = m.winner === "HOME" ? m.home_team_id : m.away_team_id;
+    if (m.status === "FINISHED") {
+      // Determine the knockout winner. football-data.org occasionally stores
+      // winner="DRAW" for penalty shootouts while still processing the result;
+      // fall back to pen_home vs pen_away in that case.
+      let winnerId = null;
+      if (m.winner === "HOME") winnerId = m.home_team_id;
+      else if (m.winner === "AWAY") winnerId = m.away_team_id;
+      else if (m.match_type === "PENALTIES" && m.pen_home != null && m.pen_away != null && m.pen_home !== m.pen_away)
+        winnerId = m.pen_home > m.pen_away ? m.home_team_id : m.away_team_id;
       const s = winnerId && standings.get(winnerId);
       if (s) { s.bonusPoints += POINTS.ADVANCE; s.total = s.matchPoints + s.bonusPoints; }
     }
