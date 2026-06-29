@@ -139,7 +139,8 @@ function bracketSection(fixtures, meta, dbById, playerById) {
     id: p.id, name: playerSubname(p) || p.name, colour: playerColour(p),
   }));
   const ownerOf = (id) => meta.get(id)?.player_id ?? null;
-  renderRadialBracket(mount, { fixtures, meta, dbById, players, ownerOf });
+  const tierOf = (id) => meta.get(id)?.tier ?? null;
+  renderRadialBracket(mount, { fixtures, meta, dbById, players, ownerOf, tierOf });
   return panel;
 }
 

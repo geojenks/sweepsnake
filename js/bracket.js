@@ -90,9 +90,10 @@ const reduceMotion = () =>
  *  - dbById   : Map matchId -> live `matches` row
  *  - players  : optional [{ id, name, colour }] -> owner rings + focus legend
  *  - ownerOf  : optional (teamId) -> playerId | null
+ *  - tierOf   : optional (teamId) -> draft tier (1 = strongest) -> league filter
  */
 export function renderRadialBracket(container, opts) {
-  const { fixtures, meta, dbById, players, ownerOf } = opts;
+  const { fixtures, meta, dbById, players, ownerOf, tierOf } = opts;
   const ko = fixtures.knockout.filter((m) => m.stage !== "THIRD_PLACE");
   const byNo = new Map(ko.map((m) => [m.matchNo, m]));
   const playerById = new Map((players || []).map((p) => [p.id, p]));
@@ -277,16 +278,32 @@ export function renderRadialBracket(container, opts) {
     return { pos, elim };
   }
 
-  // ---- highlight pass (elim dim + optional player focus) ----
-  const selected = new Set(); // focused player ids
+  // ---- highlight pass (elim dim + optional player / league focus) ----
+  // Two independent filters that intersect: a team is "in focus" only if it
+  // satisfies every active filter. League L follows the sweepstake model
+  // (tier >= L: L8 = tier 8 only, L1 = everyone).
+  const selectedPlayers = new Set();
+  let selectedLeague = null;
+  const filterActive = () => selectedPlayers.size > 0 || selectedLeague != null;
+  function inFocus(tid) {
+    if (selectedPlayers.size) {
+      const pid = ownerOf ? ownerOf(tid) : null;
+      if (pid == null || !selectedPlayers.has(pid)) return false;
+    }
+    if (selectedLeague != null) {
+      const t = tierOf ? tierOf(tid) : null;
+      if (t == null || t < selectedLeague) return false;
+    }
+    return true;
+  }
   function applyHighlight() {
+    const active = filterActive();
     for (const [tid, g] of flagEls) {
       if (g.style.display === "none") continue;
       const elim = g.classList.contains("elim");
       let op = elim ? OP_ELIM : OP_ALIVE;
-      if (selected.size) {
-        const pid = ownerOf ? ownerOf(tid) : null;
-        if (pid != null && selected.has(pid)) { if (elim) op = OP_FOCUS_ELIM; }
+      if (active) {
+        if (inFocus(tid)) { if (elim) op = OP_FOCUS_ELIM; }
         else op *= OP_DIM;
       }
       g.style.opacity = op;
@@ -341,23 +358,49 @@ export function renderRadialBracket(container, opts) {
   const wrap = h("div", { class: "bracket-wrap" });
   wrap.append(svg);
 
-  // focus legend (sweepsnake variant only)
+  // focus legend — players (top-left). Sweepsnake variant only.
   if (players && players.length) {
-    const legend = h("div", { class: "bk-legend" });
+    const legend = h("div", { class: "bk-legend bk-legend--players" });
     legend.append(h("div", { class: "bk-legend-title" }, "Players"));
     for (const p of players) {
       const item = h("button", { class: "bk-legend-item", "data-player": p.id, title: `Focus ${p.name}` },
         h("span", { class: "bk-swatch", style: { background: p.colour } }),
         h("span", { class: "bk-legend-name" }, p.name));
       item.addEventListener("click", () => {
-        if (selected.has(p.id)) { selected.delete(p.id); item.classList.remove("is-sel"); }
-        else { selected.add(p.id); item.classList.add("is-sel"); }
-        wrap.classList.toggle("has-sel", selected.size > 0);
+        if (selectedPlayers.has(p.id)) { selectedPlayers.delete(p.id); item.classList.remove("is-sel"); }
+        else { selectedPlayers.add(p.id); item.classList.add("is-sel"); }
+        wrap.classList.toggle("has-sel", filterActive());
         applyHighlight();
       });
       legend.append(item);
     }
     wrap.append(legend);
+  }
+
+  // league/tier filter (top-right) — compact number grid; single-select toggle.
+  if (tierOf) {
+    const tiers = [...new Set(allTeams.map((t) => tierOf(t)).filter((t) => t != null))];
+    const maxTier = tiers.length ? Math.max(...tiers) : 0;
+    if (maxTier > 1) {
+      const legend = h("div", { class: "bk-legend bk-legend--leagues" });
+      legend.append(h("div", { class: "bk-legend-title" }, "Leagues"));
+      const grid = h("div", { class: "bk-leagues-grid" });
+      const btns = [];
+      for (let L = 1; L <= maxTier; L++) {
+        const label = L === 1 ? "League 1 · all teams" : `League ${L} · tiers ${L}–${maxTier}`;
+        const b = h("button", { class: "bk-league-btn", title: label, "aria-label": label }, L);
+        b.addEventListener("click", () => {
+          selectedLeague = selectedLeague === L ? null : L;
+          btns.forEach((x, i) => x.classList.toggle("is-sel", selectedLeague === i + 1));
+          wrap.classList.toggle("has-sel", filterActive());
+          applyHighlight();
+        });
+        btns.push(b);
+        grid.append(b);
+      }
+      legend.append(grid);
+      wrap.append(legend);
+    }
   }
 
   if (games.length) {
