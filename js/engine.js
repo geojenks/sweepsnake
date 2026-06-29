@@ -3,11 +3,10 @@
 
 // ---- Points configuration (from the brief) ----
 export const POINTS = {
-  WIN: 3,        // win in 90 minutes
-  DRAW: 1,       // draw in 90 minutes (also the "draw that led to penalties")
-  ET_WIN: 2,     // win in extra time (no shootout)
-  PEN_BONUS: 3,  // shootout win, ON TOP of the +1 draw both teams already get
-  ADVANCE: 2,    // bonus per knockout round reached
+  WIN: 3,     // win in 90 minutes
+  DRAW: 1,    // draw in 90 minutes (also the draw that leads to ET or penalties)
+  ET_WIN: 2,  // win in extra time
+  ADVANCE: 2, // bonus for winning a knockout match (advancing the round)
 };
 
 // Knockout stages that count as "progressing a round" for the advancement bonus.
@@ -98,12 +97,10 @@ export function computeStandings(matches) {
 
     // Match points + W/D/L record.
     if (m.type === "PENALTIES") {
-      // Drawn in play -> both record a draw and get the draw point; the shootout
-      // winner gets PEN_BONUS on top (4 total from the match; loser keeps 1).
+      // Drawn after 90 + 30 min; both get the draw point. Winner advances via
+      // the ADVANCE bonus below — no extra match points for the shootout.
       home.d += 1; away.d += 1;
       home.matchPoints += POINTS.DRAW; away.matchPoints += POINTS.DRAW;
-      const shootoutWinner = m.winner === "HOME" ? home : away;
-      shootoutWinner.matchPoints += POINTS.PEN_BONUS;
     } else if (m.type === "EXTRA_TIME") {
       // Settled in extra time. Winner records a win; loser records a loss but
       // keeps the consolation draw point for having drawn in 90 minutes.
