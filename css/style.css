@@ -177,6 +177,20 @@ svg.bracket { width: 100%; height: auto; display: block; overflow: visible; }
 .bf:hover .bf-name, .bf.named .bf-name { opacity: 1; }
 .bf:hover { /* lift hovered flag above neighbours so its name isn't clipped */ }
 
+/* kick-off marker — small dot between a match's two flags; reveals date+time */
+.bk-koff { cursor: pointer; }
+.bk-koff-dot {
+  fill: var(--text-faint); stroke: var(--bg); stroke-width: 1.5;
+  opacity: 0.5; transition: opacity .15s, fill .15s, r .15s;
+}
+.bk-koff:hover .bk-koff-dot, .bk-koff.shown .bk-koff-dot { fill: var(--gold); opacity: 1; }
+.bk-koff-label {
+  fill: var(--text); stroke: var(--bg); stroke-width: 4px; paint-order: stroke;
+  font-family: var(--ui-font); font-size: 14px; font-weight: 600;
+  opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.bk-koff:hover .bk-koff-label, .bk-koff.shown .bk-koff-label { opacity: 1; }
+
 /* unresolved entrant placeholders */
 .bf-ph-c { fill: var(--bg-row); stroke: var(--line-soft); stroke-width: 2; stroke-dasharray: 3 3; }
 .bf-ph-t { fill: var(--text-faint); font-size: 14px; font-weight: 700; font-family: var(--num-font); }

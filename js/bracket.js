@@ -82,6 +82,17 @@ const angForIdx = (i) => -90 + (i + 0.5) * (360 / N_LEAVES);
 const reduceMotion = () =>
   window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// Kick-off label: the tournament runs in British Summer Time, so show Europe/London.
+const fmtKickoff = (utc) => {
+  if (!utc) return "";
+  try {
+    return new Date(utc).toLocaleString("en-GB", {
+      weekday: "short", day: "numeric", month: "short",
+      hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London",
+    }) + " BST";
+  } catch { return ""; }
+};
+
 /**
  * Render the radial bracket into `container`.
  * opts = { fixtures, meta, dbById, players?, ownerOf? }
@@ -159,6 +170,7 @@ export function renderRadialBracket(container, opts) {
   const lineLayer = s("g", { class: "bk-lines" });
   const phLayer = s("g", { class: "bk-ph-layer" });
   const flagLayer = s("g", { class: "bk-flags" });
+  const koffLayer = s("g", { class: "bk-koffs" });
 
   const pathEls = new Map();
   for (const m of ko) {
@@ -171,7 +183,7 @@ export function renderRadialBracket(container, opts) {
   lineLayer.append(s("text", { class: "bk-trophy", x: CX, y: CY,
     "text-anchor": "middle", "dominant-baseline": "central" }, "🏆"));
 
-  svg.append(lineLayer, phLayer, flagLayer);
+  svg.append(lineLayer, phLayer, flagLayer, koffLayer);
 
   // ---- live data: resolve entrants + list finished knockout games ----
   const dbOf = (no) => dbById.get(byNo.get(no).id);
@@ -200,6 +212,22 @@ export function renderRadialBracket(container, opts) {
     phLayer.append(s("g", { class: "bf-ph", transform: `translate(${g.x} ${g.y})` },
       s("circle", { r: BADGE_R, class: "bf-ph-c" }),
       s("text", { class: "bf-ph-t", "text-anchor": "middle", "dominant-baseline": "central" }, shortSlot(l.slot))));
+  }
+
+  // ---- kick-off markers: a small dot midway between a match's two entrant slots
+  // (i.e. between the two flag circles); hover or click reveals its date + time. ----
+  for (const m of ko) {
+    const ch = nodeGeom(childNode(m.matchNo, "home"));
+    const ca = nodeGeom(childNode(m.matchNo, "away"));
+    const when = fmtKickoff(dbOf(m.matchNo)?.utcDate || m.utcDate);
+    if (!when) continue;
+    const g = s("g", { class: "bk-koff", transform: `translate(${(ch.x + ca.x) / 2} ${(ch.y + ca.y) / 2})` });
+    g.append(s("title", {}, when));
+    g.append(s("circle", { r: 5, cx: 0, cy: 0, class: "bk-koff-dot" }));
+    g.append(s("text", { class: "bk-koff-label", y: -12, "text-anchor": "middle", "paint-order": "stroke" }, when));
+    g.addEventListener("pointerenter", () => g.parentNode.append(g)); // raise so the label isn't clipped
+    g.addEventListener("click", () => { g.parentNode.append(g); g.classList.toggle("shown"); });
+    koffLayer.append(g);
   }
 
   // ---- one persistent flag badge per team ----
