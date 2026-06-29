@@ -85,6 +85,7 @@ function render() {
   root.innerHTML = "";
   root.append(intro(playedCount));
   root.append(bracketSection(state.fixtures, meta, dbById, playerById));
+  root.append(knockoutSection(knockout, meta, playerById, dbById));
   root.append(viewToggle());
   if (state.view === "chrono") {
     // Tables first, then every group fixture in one chronological list.
@@ -95,7 +96,6 @@ function render() {
     root.append(groupSection(groupStage, meta, playerById, dbById, groupStandings, true));
   }
   root.append(thirdPlaceSection(groupStage, meta, playerById, groupStandings));
-  root.append(knockoutSection(knockout, meta, playerById, dbById));
 }
 
 function viewToggle() {
