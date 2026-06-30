@@ -78,9 +78,15 @@ function eliminatedSet(matches, teamsFile) {
       else if (ag > hg) { as.pts += 3; }
       else              { hs.pts += 1; as.pts += 1; }
     } else {
-      // Knockout match: loser is out.
-      if (m.winner === "HOME") eliminated.add(a);
-      else if (m.winner === "AWAY") eliminated.add(h);
+      // Knockout match: loser is out. Mirror the pen-score fallback used in the
+      // bonus calculation — football-data.org can store winner="DRAW" for a
+      // penalty shootout while it is still processing, so check pen scores too.
+      let loser = null;
+      if (m.winner === "HOME") loser = a;
+      else if (m.winner === "AWAY") loser = h;
+      else if (m.match_type === "PENALTIES" && m.pen_home != null && m.pen_away != null && m.pen_home !== m.pen_away)
+        loser = m.pen_home > m.pen_away ? a : h;
+      if (loser) eliminated.add(loser);
     }
   }
 
