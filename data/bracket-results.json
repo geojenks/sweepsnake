@@ -186,12 +186,12 @@
       "status": "FINISHED",
       "home_team_id": "759",
       "away_team_id": "761",
-      "home_score": 5,
-      "away_score": 6,
-      "winner": null,
+      "home_score": 1,
+      "away_score": 1,
+      "winner": "AWAY",
       "match_type": "PENALTIES",
-      "pen_home": 5,
-      "pen_away": 5
+      "pen_home": 3,
+      "pen_away": 4
     },
     {
       "id": "537416",
