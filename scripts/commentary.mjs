@@ -40,6 +40,17 @@ const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 // ---- static data ----
 const teamsFile = JSON.parse(readFileSync(join(ROOT, "data/wc2026_teams.json"), "utf8"));
 const draftFile = JSON.parse(readFileSync(join(ROOT, "data/draft-picks.json"), "utf8"));
+const fixturesFile = JSON.parse(readFileSync(join(ROOT, "data/wc2026_fixtures.json"), "utf8"));
+
+// The static knockout bracket tree (the SAME source the radial bracket draws from).
+// Each node carries its DB `id`, `matchNo`, `stage`, and `feedsInto` (the matchNo it
+// advances the winner to). This — NOT the DB's future team slots — is the source of
+// truth for who goes through and whom they meet, so the forward-look is correct the
+// instant a knockout game finishes (football-data fills the next round's slots only
+// after a lag, which used to make freshly-qualified winners look eliminated).
+const KO = (fixturesFile.knockout || []).filter((m) => m.stage !== "THIRD_PLACE");
+const koById = new Map(KO.map((m) => [String(m.id), m]));
+const koByNo = new Map(KO.map((m) => [m.matchNo, m]));
 
 // team_id -> { name, flag, group }
 const team = new Map(teamsFile.teams.map((t) => [String(t.id), { name: t.name, flag: t.flag || "", group: t.group || "?" }]));
@@ -438,6 +449,47 @@ function nextFixtureIndex(allMatches) {
   return idx;
 }
 
+// The winning team_id of a knockout match (by its matchNo), read from the finished
+// DB rows. KNOCKOUT TRUTH: the winner advances no matter HOW they won — 90 minutes,
+// extra time or a shootout. We trust the synced `winner`, but football-data can
+// briefly report a shootout as winner="DRAW" before it processes the result, so we
+// fall back to the penalty score, then (last resort) the full-time score. Returns
+// null only when the tie genuinely isn't decided yet.
+function koWinnerId(finishedById, matchNo) {
+  const ko = koByNo.get(matchNo);
+  if (!ko) return null;
+  const d = finishedById.get(String(ko.id));
+  if (!d || !DONE_STATUS.has(d.status)) return null;
+  if (d.winner === "HOME") return d.home_team_id;
+  if (d.winner === "AWAY") return d.away_team_id;
+  if (d.pen_home != null && d.pen_away != null && d.pen_home !== d.pen_away)
+    return d.pen_home > d.pen_away ? d.home_team_id : d.away_team_id;
+  if (d.home_score != null && d.away_score != null && d.home_score !== d.away_score)
+    return d.home_score > d.away_score ? d.home_team_id : d.away_team_id;
+  return null;
+}
+
+// Where a team goes after the knockout match it played today, resolved purely from
+// the static bracket tree + match winners (so it's right the moment the whistle
+// blows). Returns one of: { eliminated }, { champion }, or { stillIn, nextStage,
+// kickoff, opponentId } where opponentId is null when the other side of the tie
+// hasn't been decided yet ("to be decided").
+function koForward(finishedById, playedNo, teamId) {
+  const ko = koByNo.get(playedNo);
+  if (!ko) return null; // not a knockout match we track
+  const winId = koWinnerId(finishedById, playedNo);
+  if (winId == null) return null; // tie not settled — caller falls back
+  if (String(winId) !== String(teamId)) return { eliminated: true };
+  const parentNo = ko.feedsInto;
+  if (parentNo == null) return { champion: true }; // won the Final
+  const parent = koByNo.get(parentNo);
+  if (!parent) return { champion: true };
+  const siblingNo = KO.filter((m) => m.feedsInto === parentNo)
+    .map((m) => m.matchNo).find((n) => n !== playedNo);
+  const oppId = siblingNo != null ? koWinnerId(finishedById, siblingNo) : null;
+  return { stillIn: true, nextStage: parent.stage, kickoff: parent.utcDate, opponentId: oppId ?? null };
+}
+
 // Final group position for every team (same tie-breakers as groupStanding), so we
 // can label a future opponent as "Group H runners-up" etc.
 function finalGroupSeeds(finished) {
@@ -585,8 +637,30 @@ function buildFacts(dayMatches, allFinished, key, priorEntries, bigNews, eventsM
     return { team: d.team, flag: d.flag, owner: d.owner, gamertag: d.gamertag,
       ...(s ? { finishedAs: `Group ${s.group} ${seedLabel(s.position)}` } : {}) };
   };
+  const finishedById = new Map(allFinished.map((m) => [String(m.id), m]));
   const involved = [...new Set(dayMatches.flatMap((m) => [m.home_team_id, m.away_team_id]))].filter(Boolean);
   const lookingAhead = involved.map((id) => {
+    // KNOCKOUT: resolve advancement from the static bracket tree (winner goes
+    // through however the win came — 90 mins, extra time or penalties), never from
+    // whether the DB has filled the next round's slot yet.
+    const todays = dayMatches.find((m) => m.home_team_id === id || m.away_team_id === id);
+    const koFix = todays && koById.get(String(todays.id));
+    if (koFix) {
+      const fwd = koForward(finishedById, koFix.matchNo, id);
+      if (fwd?.eliminated) return { ...descAhead(id), status: "eliminated — lost their knockout tie" };
+      if (fwd?.champion) return { ...descAhead(id), status: "WON THE WORLD CUP — no fixtures remaining" };
+      if (fwd?.stillIn) return {
+        ...descAhead(id),
+        status: "still in — won their knockout tie and advanced",
+        nextStage: prettyStage(fwd.nextStage),
+        kickoff: fmtKick(fwd.kickoff),
+        opponent: fwd.opponentId
+          ? descAhead(fwd.opponentId)
+          : "to be decided (the team they'll meet hasn't been confirmed yet)",
+      };
+      // fwd null (tie somehow unsettled) — fall through to the DB-fixture path.
+    }
+    // GROUP STAGE (and any fallback): the DB lists each surviving team's next fixture.
     const f = nextIdx?.get(id);
     if (!f) return { ...descAhead(id), status: "eliminated — no fixtures remaining" };
     const oppId = f.home_team_id === id ? f.away_team_id : f.home_team_id;
