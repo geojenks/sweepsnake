@@ -4,7 +4,7 @@
     {
       "id": "537375",
       "status": "SCHEDULED",
-      "home_team_id": null,
+      "home_team_id": "761",
       "away_team_id": null,
       "home_score": null,
       "away_score": null,
@@ -17,7 +17,7 @@
       "id": "537376",
       "status": "SCHEDULED",
       "home_team_id": "828",
-      "away_team_id": null,
+      "away_team_id": "815",
       "home_score": null,
       "away_score": null,
       "winner": null,
@@ -28,7 +28,7 @@
     {
       "id": "537377",
       "status": "SCHEDULED",
-      "home_team_id": null,
+      "home_team_id": "764",
       "away_team_id": null,
       "home_score": null,
       "away_score": null,
@@ -224,9 +224,9 @@
       "away_team_id": "815",
       "home_score": 3,
       "away_score": 4,
-      "winner": null,
+      "winner": "AWAY",
       "match_type": "PENALTIES",
-      "pen_home": 3,
+      "pen_home": 2,
       "pen_away": 3
     },
     {
