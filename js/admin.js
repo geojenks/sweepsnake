@@ -223,21 +223,36 @@ function matchesPanel(matches, teams) {
 
 function matchRow(m, nameOf) {
   const h = nameOf.get(m.home_team_id), a = nameOf.get(m.away_team_id);
-  const hs = textInput(m.home_score, { type: "number", style: { width: "56px" } });
-  const as = textInput(m.away_score, { type: "number", style: { width: "56px" } });
+  const hs  = textInput(m.home_score, { type: "number", style: { width: "56px" } });
+  const as  = textInput(m.away_score, { type: "number", style: { width: "56px" } });
+  const phs = textInput(m.pen_home,   { type: "number", style: { width: "48px" }, placeholder: "ph" });
+  const pas = textInput(m.pen_away,   { type: "number", style: { width: "48px" }, placeholder: "pa" });
   const type = el("select", { class: "btn" },
     ["REGULAR", "EXTRA_TIME", "PENALTIES"].map((t) =>
       el("option", { value: t, ...(m.match_type === t ? { selected: "" } : {}) }, t)));
   const save = async () => {
     const home = Number(hs.value), away = Number(as.value);
-    const winner = home > away ? "HOME" : away > home ? "AWAY" : "DRAW";
-    await overrideMatch(m.id, { home_score: home, away_score: away, match_type: type.value, winner, status: "FINISHED" });
+    const isPen = type.value === "PENALTIES";
+    const ph = phs.value !== "" ? Number(phs.value) : null;
+    const pa = pas.value !== "" ? Number(pas.value) : null;
+    // For pens derive winner from pen scores (match score is level); otherwise from match score.
+    let winner;
+    if (isPen && ph != null && pa != null && ph !== pa) winner = ph > pa ? "HOME" : "AWAY";
+    else winner = home > away ? "HOME" : away > home ? "AWAY" : "DRAW";
+    await overrideMatch(m.id, {
+      home_score: home, away_score: away,
+      pen_home: isPen ? ph : null, pen_away: isPen ? pa : null,
+      match_type: type.value, winner, status: "FINISHED",
+    });
     await reload();
   };
-  return el("div", { class: "btn-row", style: { alignItems: "center" } },
+  return el("div", { class: "btn-row", style: { alignItems: "center", flexWrap: "wrap", gap: "6px" } },
     m.is_overridden ? el("span", { title: "overridden" }, "✏️") : el("span", {}, ""),
-    el("span", { class: "small", style: { minWidth: "160px", textAlign: "right" } }, `${h?.flag || ""} ${h?.name || m.home_team_id}`),
+    el("span", { class: "small", style: { minWidth: "140px", textAlign: "right" } }, `${h?.flag || ""} ${h?.name || m.home_team_id}`),
     hs, el("span", { class: "muted" }, "–"), as,
-    el("span", { class: "small", style: { minWidth: "160px" } }, `${a?.name || m.away_team_id} ${a?.flag || ""}`),
+    el("span", { class: "small muted", style: { fontSize: "0.72rem" } }, "(pens:"),
+    phs, el("span", { class: "muted" }, "–"), pas,
+    el("span", { class: "small muted", style: { fontSize: "0.72rem" } }, ")"),
+    el("span", { class: "small", style: { minWidth: "140px" } }, `${a?.name || m.away_team_id} ${a?.flag || ""}`),
     type, el("button", { class: "btn", onclick: save }, "Save"));
 }
