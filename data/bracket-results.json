@@ -40,8 +40,8 @@
     {
       "id": "537378",
       "status": "SCHEDULED",
-      "home_team_id": null,
-      "away_team_id": null,
+      "home_team_id": "769",
+      "away_team_id": "770",
       "home_score": null,
       "away_score": null,
       "winner": null,
@@ -64,8 +64,8 @@
     {
       "id": "537380",
       "status": "SCHEDULED",
-      "home_team_id": null,
-      "away_team_id": null,
+      "home_team_id": "771",
+      "away_team_id": "805",
       "home_score": null,
       "away_score": null,
       "winner": null,
@@ -273,7 +273,7 @@
       "home_score": 3,
       "away_score": 2,
       "winner": "HOME",
-      "match_type": "REGULAR",
+      "match_type": "EXTRA_TIME",
       "pen_home": null,
       "pen_away": null
     },
