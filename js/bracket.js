@@ -300,6 +300,8 @@ export function renderRadialBracket(container, opts) {
         const lp = ws === "home" ? d.pen_away : d.pen_home;
         const wp = ws === "home" ? d.pen_home : d.pen_away;
         text += ` (p ${lp}–${wp})`;
+      } else if (d.match_type === "EXTRA_TIME") {
+        text += " (aet)";
       }
       elim.set(loseId, { text });
     }

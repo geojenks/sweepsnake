@@ -89,12 +89,27 @@ async function main() {
       }
     }
 
+    // football-data.org adds penalty-shootout goals into score.fullTime, so a
+    // match that finishes 1-1 AET and is won 3-2 on pens arrives as fullTime={4,3}.
+    // Subtract pen goals to recover the actual pre-penalty match scoreline.
+    let homeScore = null, awayScore = null;
+    if (finished) {
+      const ph = s.penalties?.home, pa = s.penalties?.away;
+      if (isPen && ph != null && pa != null) {
+        homeScore = (s.fullTime?.home ?? 0) - ph;
+        awayScore = (s.fullTime?.away ?? 0) - pa;
+      } else {
+        homeScore = s.fullTime?.home ?? null;
+        awayScore = s.fullTime?.away ?? null;
+      }
+    }
+
     rows.push({
       id,
       home_team_id: m.homeTeam?.id != null ? String(m.homeTeam.id) : null,
       away_team_id: m.awayTeam?.id != null ? String(m.awayTeam.id) : null,
-      home_score: finished ? s.fullTime?.home ?? null : null,
-      away_score: finished ? s.fullTime?.away ?? null : null,
+      home_score: homeScore,
+      away_score: awayScore,
       half_time_home: finished ? s.halfTime?.home ?? null : null,
       half_time_away: finished ? s.halfTime?.away ?? null : null,
       match_type: finished ? matchType(s.duration) : null,

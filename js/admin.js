@@ -3,7 +3,7 @@
 import { PLAYER_COLOURS } from "./engine.js";
 import {
   sb, setConfig, getPlayers, addPlayer, updatePlayer, deletePlayer,
-  upsertTeams, assignTeam, overrideMatch,
+  upsertTeams, assignTeam, overrideMatch, unlockMatch,
 } from "./supabase.js";
 import { $, el, playerColour, loadLiveData, showError } from "./app.js";
 
@@ -246,13 +246,20 @@ function matchRow(m, nameOf) {
     });
     await reload();
   };
+  const unlock = async () => {
+    if (!confirm("Remove the override lock? The next sync will overwrite this match with data from football-data.org.")) return;
+    await unlockMatch(m.id);
+    await reload();
+  };
+
   return el("div", { class: "btn-row", style: { alignItems: "center", flexWrap: "wrap", gap: "6px" } },
-    m.is_overridden ? el("span", { title: "overridden" }, "✏️") : el("span", {}, ""),
+    m.is_overridden ? el("span", { title: "overridden — sync will skip this match" }, "✏️") : el("span", {}, ""),
     el("span", { class: "small", style: { minWidth: "140px", textAlign: "right" } }, `${h?.flag || ""} ${h?.name || m.home_team_id}`),
     hs, el("span", { class: "muted" }, "–"), as,
     el("span", { class: "small muted", style: { fontSize: "0.72rem" } }, "(pens:"),
     phs, el("span", { class: "muted" }, "–"), pas,
     el("span", { class: "small muted", style: { fontSize: "0.72rem" } }, ")"),
     el("span", { class: "small", style: { minWidth: "140px" } }, `${a?.name || m.away_team_id} ${a?.flag || ""}`),
-    type, el("button", { class: "btn", onclick: save }, "Save"));
+    type, el("button", { class: "btn", onclick: save }, "Save"),
+    m.is_overridden ? el("button", { class: "btn", title: "Remove override lock (next sync will update from API)", onclick: unlock }, "Unlock") : null);
 }

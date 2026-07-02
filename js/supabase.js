@@ -76,6 +76,12 @@ export async function overrideMatch(id, patch) {
       .eq("id", id).select().single()
   );
 }
+export async function unlockMatch(id) {
+  return ok(
+    await sb.from("matches").update({ is_overridden: false })
+      .eq("id", id).select().single()
+  );
+}
 
 // ---- Realtime ----
 // Subscribe to any change on a table; returns the channel so callers can remove it.

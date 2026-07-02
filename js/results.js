@@ -247,7 +247,7 @@ function fixtureRow(f, meta, playerById, dbById, groupTag) {
     : el("span", { class: "num muted", style: { minWidth: "44px", textAlign: "center" } }, "––");
 
   const groupPrefix = groupTag ? `Grp ${groupTag}  ·  ` : "";
-  const penLine = finished && pen(db) ? `  ·  ${pen(db)}` : "";
+  const penLine = finished && matchSuffix(db) ? `  ·  ${matchSuffix(db)}` : "";
   return el("div", {
     style: { display: "flex", flexDirection: "column", gap: "2px",
              padding: "5px 8px", background: "var(--bg-row)", borderRadius: "7px" },
@@ -263,8 +263,12 @@ function fixtureRow(f, meta, playerById, dbById, groupTag) {
       groupPrefix + fmtDate(f.utcDate) + (finished ? "  ·  FT" : "") + penLine));
 }
 
-const pen = (db) => db.match_type === "PENALTIES" && db.pen_home != null
-  ? `Pens ${db.pen_home}–${db.pen_away}` : db.match_type || "";
+const matchSuffix = (db) => {
+  if (!db) return "";
+  if (db.match_type === "PENALTIES") return db.pen_home != null ? `Pens ${db.pen_home}–${db.pen_away}` : "Pens";
+  if (db.match_type === "EXTRA_TIME") return "AET";
+  return "";
+};
 
 // ---- Best third-placed teams ----
 // The eight best of the twelve third-placed teams join the Round of 32. Rank them
@@ -372,7 +376,7 @@ function koCard(m, meta, playerById, dbById) {
     el("div", { style: { display: "flex", flexDirection: "column", gap: "4px", marginTop: "6px" } },
       scoreLine(homeId, m.home),
       scoreLine(awayId, m.away)),
-    finished && pen(db) && db.match_type !== "REGULAR"
-      ? el("div", { class: "small muted", style: { marginTop: "4px" } }, pen(db))
+    finished && matchSuffix(db)
+      ? el("div", { class: "small muted", style: { marginTop: "4px" } }, matchSuffix(db))
       : null);
 }
