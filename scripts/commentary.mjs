@@ -384,29 +384,53 @@ async function generate(facts, { search = true } = {}) {
   }
   const json = await res.json();
   if (json.stop_reason === "refusal") throw new Error(`refused: ${JSON.stringify(json.stop_details)}`);
-  // Hitting the max_tokens ceiling mid-generation is NOT safe to accept even though
-  // it comes back HTTP 200: structured-output (json_schema) decoding is grammar-
-  // constrained, so a cutoff forces the JSON closed with minimal placeholder content
-  // for whatever field was in progress (e.g. html: "x") rather than erroring — the
-  // response is schema-valid JSON but garbage. Treat max_tokens as a hard failure so
-  // it retries (search off) or fails the job instead of writing broken commentary.
-  if (json.stop_reason === "max_tokens") {
-    if (search) { console.warn("hit max_tokens with search on; retrying without it"); return generate(facts, { search: false }); }
-    throw new Error("hit max_tokens — output truncated, refusing to use it");
-  }
+
+  // Retry once (search off) on any sign the output is broken, instead of committing
+  // garbage. Two known failure modes so far, both HTTP 200 / schema-valid JSON:
+  //  1. stop_reason "max_tokens" — grammar-constrained JSON decoding force-closes
+  //     whatever field was mid-flight with minimal placeholder content (e.g. html: "x").
+  //  2. content that parses as valid JSON but is structurally broken prose — seen once
+  //     with a dangling unclosed <p>, stray backslashes and literal repair-scaffolding
+  //     text ("REGENERATE — see below") baked into the html field, stop_reason NOT
+  //     max_tokens. Cause unconfirmed (looks like a structured-output repair path that
+  //     leaked its own prompt into the field), so we validate the shape of the result
+  //     rather than trust any particular stop_reason.
+  const retryOrThrow = (reason) => {
+    if (search) { console.warn(`${reason}; retrying without search`); return generate(facts, { search: false }); }
+    throw new Error(`${reason} — refusing to use it`);
+  };
+  if (json.stop_reason === "max_tokens") return retryOrThrow("hit max_tokens");
+
   // The structured answer is the final text block (after any thinking / tool blocks).
   const textBlock = [...(json.content || [])].reverse().find((b) => b.type === "text");
   if (!textBlock) {
     const kinds = (json.content || []).map((b) => b.type).join(",") || "none";
     throw new Error(`no text block (stop_reason=${json.stop_reason}, blocks=[${kinds}]) — likely ran out of max_tokens during thinking`);
   }
-  const result = JSON.parse(textBlock.text);
-  // Belt-and-braces sanity check in case a truncation ever slips through as some
-  // other stop_reason: a real write-up is hundreds of words of HTML, never a stub.
-  if (!result.html || result.html.length < 200) {
-    throw new Error(`html suspiciously short (${result.html?.length ?? 0} chars) — refusing to use it: ${JSON.stringify(result.html)}`);
-  }
+  let result;
+  try { result = JSON.parse(textBlock.text); }
+  catch { return retryOrThrow(`text block was not valid JSON: ${textBlock.text.slice(0, 200)}`); }
+
+  const problem = htmlProblem(result.html);
+  if (problem) return retryOrThrow(`html failed validation (${problem}): ${JSON.stringify((result.html || "").slice(0, 300))}`);
   return result;
+}
+
+// Sanity-check the html fragment's shape rather than trusting any particular
+// stop_reason — returns a short description of what's wrong, or null if it looks
+// like a genuine, complete round-up.
+function htmlProblem(html) {
+  if (!html || html.length < 200) return `too short (${html?.length ?? 0} chars)`;
+  const trimmed = html.trim();
+  if (!/>$/.test(trimmed)) return "doesn't end with a closing tag";
+  if (/[{}⚠]/.test(html)) return "contains stray JSON/warning characters";
+  for (const tag of ["p", "h4", "strong", "em"]) {
+    const open = (html.match(new RegExp(`<${tag}>`, "g")) || []).length;
+    const close = (html.match(new RegExp(`</${tag}>`, "g")) || []).length;
+    if (open !== close) return `unbalanced <${tag}> tags (${open} open, ${close} close)`;
+  }
+  if (!/<p>/.test(html)) return "no <p> paragraphs";
+  return null;
 }
 
 // strip tags/entities so prior write-ups can be fed back as plain-text context
