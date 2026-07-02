@@ -1,6 +1,20 @@
 {
-  "updated_at": "2026-07-01T08:16:07.574Z",
+  "updated_at": "2026-07-02T07:34:40.286Z",
   "entries": [
+    {
+      "day_key": "2026-07-01",
+      "date_label": "Night of Wednesday 1 July",
+      "title": "Kane Stitches Barney to Within a Whisker of the Summit",
+      "subtitle": "Belgium rob a grave at gone midnight to bury Pete's Senegal, while ten-man America hands Old Gil the night's fattest haul and not one rung of ladder",
+      "match_ids": [
+        "537426",
+        "537422",
+        "537421"
+      ],
+      "html": "x",
+      "model": "claude-opus-4-8",
+      "generated_at": "2026-07-02T07:34:40.286Z"
+    },
     {
       "day_key": "2026-06-30",
       "date_label": "Night of Tuesday 30 June",
