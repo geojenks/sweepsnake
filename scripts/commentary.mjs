@@ -343,7 +343,7 @@ OUTPUT: return JSON {"title": "...", "subtitle": "...", "html": "..."}. The titl
 async function generate(facts, { search = true } = {}) {
   const body = {
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 24000,
     thinking: { type: "adaptive" },
     output_config: {
       effort: "medium",
@@ -384,13 +384,29 @@ async function generate(facts, { search = true } = {}) {
   }
   const json = await res.json();
   if (json.stop_reason === "refusal") throw new Error(`refused: ${JSON.stringify(json.stop_details)}`);
+  // Hitting the max_tokens ceiling mid-generation is NOT safe to accept even though
+  // it comes back HTTP 200: structured-output (json_schema) decoding is grammar-
+  // constrained, so a cutoff forces the JSON closed with minimal placeholder content
+  // for whatever field was in progress (e.g. html: "x") rather than erroring — the
+  // response is schema-valid JSON but garbage. Treat max_tokens as a hard failure so
+  // it retries (search off) or fails the job instead of writing broken commentary.
+  if (json.stop_reason === "max_tokens") {
+    if (search) { console.warn("hit max_tokens with search on; retrying without it"); return generate(facts, { search: false }); }
+    throw new Error("hit max_tokens — output truncated, refusing to use it");
+  }
   // The structured answer is the final text block (after any thinking / tool blocks).
   const textBlock = [...(json.content || [])].reverse().find((b) => b.type === "text");
   if (!textBlock) {
     const kinds = (json.content || []).map((b) => b.type).join(",") || "none";
     throw new Error(`no text block (stop_reason=${json.stop_reason}, blocks=[${kinds}]) — likely ran out of max_tokens during thinking`);
   }
-  return JSON.parse(textBlock.text);
+  const result = JSON.parse(textBlock.text);
+  // Belt-and-braces sanity check in case a truncation ever slips through as some
+  // other stop_reason: a real write-up is hundreds of words of HTML, never a stub.
+  if (!result.html || result.html.length < 200) {
+    throw new Error(`html suspiciously short (${result.html?.length ?? 0} chars) — refusing to use it: ${JSON.stringify(result.html)}`);
+  }
+  return result;
 }
 
 // strip tags/entities so prior write-ups can be fed back as plain-text context
