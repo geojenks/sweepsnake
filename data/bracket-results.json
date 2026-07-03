@@ -339,15 +339,15 @@
     },
     {
       "id": "537428",
-      "status": "SCHEDULED",
+      "status": "FINISHED",
       "home_team_id": "779",
       "away_team_id": "825",
-      "home_score": null,
-      "away_score": null,
+      "home_score": -1,
+      "away_score": 1,
       "winner": null,
-      "match_type": null,
-      "pen_home": null,
-      "pen_away": null
+      "match_type": "PENALTIES",
+      "pen_home": 4,
+      "pen_away": 4
     },
     {
       "id": "537429",
