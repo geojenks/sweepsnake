@@ -100,8 +100,8 @@
     {
       "id": "537383",
       "status": "SCHEDULED",
-      "home_team_id": null,
-      "away_team_id": null,
+      "home_team_id": "773",
+      "away_team_id": "815",
       "home_score": null,
       "away_score": null,
       "winner": null,
