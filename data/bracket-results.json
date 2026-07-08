@@ -90,11 +90,11 @@
       "status": "FINISHED",
       "home_team_id": "788",
       "away_team_id": "818",
-      "home_score": 1,
+      "home_score": 0,
       "away_score": 0,
-      "winner": null,
+      "winner": "HOME",
       "match_type": "PENALTIES",
-      "pen_home": 3,
+      "pen_home": 4,
       "pen_away": 3
     },
     {
@@ -136,8 +136,8 @@
     {
       "id": "537386",
       "status": "SCHEDULED",
-      "home_team_id": null,
-      "away_team_id": null,
+      "home_team_id": "762",
+      "away_team_id": "788",
       "home_score": null,
       "away_score": null,
       "winner": null,
